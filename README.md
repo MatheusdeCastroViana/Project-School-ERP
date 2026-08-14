@@ -10,9 +10,9 @@ As versões específicas das tecnologias serão definidas posteriormente, durant
 
 | Categoria | Tecnologia | Versão |
 |---|---|---|
-| Linguagem de programação | Python | A definir |
-| Framework web | Django | A definir |
-| Banco de dados | PostgreSQL | A definir |
+| Linguagem de programação | Python | 3.14.6 |
+| Framework web | Django | 6.1 |
+| Banco de dados | PostgreSQL | 18.6 |
 
 ## Arquitetura da aplicação
 
