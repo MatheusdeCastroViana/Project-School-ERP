@@ -75,3 +75,42 @@ Cada app deverá concentrar Models, Views, URLs, formulários, arquivos administ
 Os relacionamentos entre os apps serão realizados por meio dos Models e das regras de negócio definidas no sistema. As configurações gerais do projeto, como banco de dados, URLs principais e configurações do Django, permanecerão em um módulo central de configuração.
 
 A arquitetura deverá manter separação entre apresentação, processamento das requisições e persistência dos dados, respeitando o padrão MVT do Django.
+
+## Para rodar o projeto
+
+1. Clone o repositório:
+```bash
+   git clone https://github.com/MatheusdeCastroViana/Project-School-ERP.git
+   cd Project-School-ERP
+```
+
+2. Crie e ative o ambiente virtual:
+```bash
+   python -m venv venv
+   venv\Scripts\activate      # Windows
+   source venv/bin/activate   # Linux/Mac
+```
+
+3. Instale as dependências:
+```bash
+   pip install -r requirements.txt
+```
+
+4. Configure as variáveis de ambiente:
+   Copie o `.env.example` para `.env` e preencha com suas credenciais locais do PostgreSQL.
+```bash
+   copy .env.example .env    # Windows
+   cp .env.example .env      # Linux/Mac
+```
+
+5. Certifique-se de que o banco de dados existe no seu PostgreSQL local (nome, usuário e senha compatíveis com o que você colocou no `.env`).
+
+6. Aplique as migrações:
+```bash
+   python manage.py migrate
+```
+
+7. Rode o servidor:
+```bash
+   python manage.py runserver
+```
