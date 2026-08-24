@@ -86,6 +86,16 @@ DATABASES = {
     }
 }
 
+# Password hashing
+# https://docs.djangoproject.com/en/6.1/topics/auth/passwords/
+# Argon2 será a primeira opção de hasher por ser mais forte contra ataques via GPU.
+# PBKDF2 fica como segunda opção.
+# O Django faz o upgrade automático dos usuários antigos (hash PBKDF2) pra Argon2 no próximo login.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+]
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
