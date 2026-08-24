@@ -86,6 +86,14 @@ DATABASES = {
     }
 }
 
+# Sessions
+# https://docs.djangoproject.com/en/6.1/ref/settings/#sessions
+# Para evitar muitos logins diários, a sessão expira por inatividade ao invés de um tempo fixo.
+# Cada request renova a contagem (SESSION_SAVE_EVERY_REQUEST),
+# A sessão só expira se o usuário ficar 30 min (1800s) sem fazer nenhuma ação.
+SESSION_COOKIE_AGE = 1800
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Password hashing
 # https://docs.djangoproject.com/en/6.1/topics/auth/passwords/
 # Argon2 será a primeira opção de hasher por ser mais forte contra ataques via GPU.
