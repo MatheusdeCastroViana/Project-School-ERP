@@ -91,6 +91,7 @@ DATABASES = {
 # Para evitar muitos logins diários, a sessão expira por inatividade ao invés de um tempo fixo.
 # Cada request renova a contagem (SESSION_SAVE_EVERY_REQUEST),
 # A sessão só expira se o usuário ficar 30 min (1800s) sem fazer nenhuma ação.
+
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
 
@@ -99,11 +100,20 @@ SESSION_SAVE_EVERY_REQUEST = True
 # Argon2 será a primeira opção de hasher por ser mais forte contra ataques via GPU.
 # PBKDF2 fica como segunda opção.
 # O Django faz o upgrade automático dos usuários antigos (hash PBKDF2) pra Argon2 no próximo login.
+
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
+#Bloqueio de login após 5 tentativas falhas.
+LOGIN_MAX_TENTATIVAS = 5
+LOGIN_BLOQUEIO_MINUTOS = 15
+
+AUTHENTICATION_BACKENDS = [
+    "usuarios.backends.UsuarioBackend", #Customizado com bloqueio com muitas tentativas falhas
+    "django.contrib.auth.backends.ModelBackend", #Padrão como segunda opção
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
