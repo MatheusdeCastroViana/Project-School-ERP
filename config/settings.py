@@ -112,7 +112,6 @@ LOGIN_BLOQUEIO_MINUTOS = 15
 
 AUTHENTICATION_BACKENDS = [
     "usuarios.backends.UsuarioBackend", #Customizado com bloqueio com muitas tentativas falhas
-    "django.contrib.auth.backends.ModelBackend", #Padrão como segunda opção
 ]
 
 # Password validation
