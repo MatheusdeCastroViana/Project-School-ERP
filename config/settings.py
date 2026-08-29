@@ -102,7 +102,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 # O Django faz o upgrade automático dos usuários antigos (hash PBKDF2) pra Argon2 no próximo login.
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'usuarios.hashers.UsuarioArgon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
