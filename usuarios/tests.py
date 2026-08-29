@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from funcionarios.models import Funcionario
+from django.contrib.auth.hashers import make_password
 import time
 
 Usuario = get_user_model()
@@ -36,19 +37,15 @@ class UsuarioArgon2PasswordHasherTests(TestCase):
         self.assertFalse(check_password("senha_errada", self.usuario.password))
 
     def test_tempo_de_hash_dentro_do_esperado(self):
-        # Testa o tempo em ms que o hasher demora pra rodar com os parâmetros configurados.
-        senha = "OutraSenhaTeste456!"
-
-        inicio = time.perf_counter()
-        Usuario.objects.create_user(
-            email="teste_tempo@exemplo.com",
-            password=senha,
-            funcionario=Funcionario.objects.create(nome="Funcionário Tempo", cpf="111.111.111-11"),
-        )
-        fim = time.perf_counter()
-
-        tempo_ms = (fim - inicio) * 1000
-        print(f"\nTempo de hash (Argon2id, t=5, m=32768, p=1): {tempo_ms:.2f} ms")
-
-        # Alerta se o hash ficar bem mais lento do que o normal
-        self.assertLess(tempo_ms, 2000, "Hash demorou mais do que o esperado (>2s)")
+            # Teste para medir a velocidade de geração do hash
+            senha = "OutraSenhaTeste456!"
+    
+            inicio = time.perf_counter()
+            hash_gerado = make_password(senha)
+            fim = time.perf_counter()
+    
+            tempo_ms = (fim - inicio) * 1000
+            print(f"\nTempo de hash (Argon2id, t=5, m=32768, p=1): {tempo_ms:.2f} ms")
+    
+            self.assertTrue(hash_gerado.startswith("argon2$argon2id$"))
+            self.assertLess(tempo_ms, 2000, "Hash demorou mais do que o esperado (>2s)")
