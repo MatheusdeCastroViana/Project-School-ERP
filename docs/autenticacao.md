@@ -18,8 +18,8 @@ Argon2id é o algoritmo recomendado atualmente pela OWASP pra hash de senha, pri
 
 **Evidência**
 - Teste automatizado: `usuarios/tests.py::test_hash_usa_argon2id`
-- ![alt text](image-2.png)
-- ![alt text](image-1.png)
+- ![Print da execução do teste hash Argon2id](evidencias/teste_autenticacao.png)
+- ![Print do hash no banco](evidencias/argon2id.png)
 
 ---
 
@@ -35,7 +35,7 @@ A OWASP recomenda, como configuração mínima do Argon2id, pelo menos 19 MiB de
 
 **Evidência**
 - Teste automatizado: `usuarios/tests.py::test_parametros_de_custo_configurados`
-- - ![alt text](image.png)
+- ![Print da execução do teste de velocidade do hash](evidencias/tempo_hash.png)
 
 ---
 
@@ -50,8 +50,7 @@ Nenhuma configuração manual foi necessária: tanto o Argon2id quanto o PBKDF2 
 Usar salt único por senha impede ataques de rainbow table e garante que duas senhas iguais gerem hashes diferentes no banco. Como isso já é padrão dos hashers do Django (e do Argon2id em geral), não foi necessário implementar nada customizado — só confirmar que a geração de salt não foi desabilitada em nenhum ponto da configuração.
 
 **Evidência**
-Dois usuários com a mesma senha (1234) com hashs diferentes.
-- ![alt text](image-3.png)
+- ![Print do banco com dois usuários que possuem a mesma senha (1234)](evidencias/teste_salt.png)
 ---
 
 ### RS 1.4 — Armazenamento correto do hash e metadados
@@ -66,7 +65,7 @@ Guardar os metadados junto com o hash (em vez de num campo separado) é o padrã
 
 **Evidência**
 - Teste automatizado: `usuarios/tests.py::test_senha_correta_autentica` e `test_senha_incorreta_nao_autentica`
-- ![alt text](image-4.png)
+- ![Print da execução dos testes](evidencias/teste_autenticacao.png)
 
 ---
 
@@ -138,7 +137,7 @@ Em `config/settings.py`, foi configurado `SESSION_COOKIE_AGE = 1800` (30 minutos
 Optamos por expiração por inatividade, e não por um tempo fixo desde o login, porque um tempo fixo obrigaria o usuário a logar de novo várias vezes ao longo do dia mesmo estando ativamente usando o sistema. Trinta minutos foi escolhido como equilíbrio entre reduzir o risco de sessão esquecida aberta e não interromper o trabalho de quem está de fato usando o sistema.
 
 **Evidência**
-- ![alt text](image-5.png)
+- ![Print da área de configurações de sessões](evidencias/session_cookie_age.png)
 - [Inserir teste manual: sessão expirando após 30 minutos de inatividade]
 
 ---
