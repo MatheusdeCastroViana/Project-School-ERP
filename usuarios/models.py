@@ -9,17 +9,18 @@ Então é preciso criar essa outra classe UsuarioManager para criar os usuarios 
 """
 
 class UsuarioManager(BaseUserManager):
-    
 
     def create_user(self, email, password=None, funcionario=None, **extra_fields):
         if not email:
             raise ValueError("O usuário precisa de um e-mail.")
-        if funcionario is None:
+
+        is_superuser = extra_fields.get("is_superuser", False)
+        if funcionario is None and not is_superuser:
             raise ValueError("Todo usuário precisa estar vinculado a um Funcionario.")
 
         email = self.normalize_email(email)
         usuario = self.model(email=email, funcionario=funcionario, **extra_fields)
-        usuario.set_password(password)  # O hash e salt ficam dentro de password (PBKDF2 com SHA256 padrão)
+        usuario.set_password(password)
         usuario.save(using=self._db)
         return usuario
 
@@ -42,9 +43,11 @@ class Usuario(AbstractUser):
     email = models.EmailField(unique=True)
 
     funcionario = models.OneToOneField(
-        "funcionarios.Funcionario",  
-        on_delete=models.PROTECT,    # Não permite apagar um Funcionario que tenha login ativo
+        "funcionarios.Funcionario",
+        on_delete=models.PROTECT,
         related_name="usuario",
+        null=True,
+        blank=True,
     )
 
     tentativas_login_falhas = models.IntegerField(default=0)
