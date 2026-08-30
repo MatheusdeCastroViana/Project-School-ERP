@@ -176,3 +176,5 @@ LOGGING = {
 }
 
 OTP_LOGIN_URL = '/usuarios/verify-2fa/'
+
+ACCOUNT_ADAPTER = 'usuarios.adapters.Custom2FAAccountAdapter'

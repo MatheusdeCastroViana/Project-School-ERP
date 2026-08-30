@@ -5,8 +5,6 @@ from datetime import timedelta
 from django.conf import settings
 from .audit import registrar_evento_autenticacao
 
-from .models_2fa import Configuracao2FA
-
 Usuario = get_user_model()
 
 
@@ -20,7 +18,6 @@ class UsuarioBackend(ModelBackend):
         try:
             usuario = Usuario.objects.get(email=email)
         except Usuario.DoesNotExist:
-
             return None
 
         if usuario.bloqueado_ate is not None and usuario.bloqueado_ate > timezone.now():
@@ -40,19 +37,6 @@ class UsuarioBackend(ModelBackend):
             usuario.bloqueado_ate = None
             usuario.save()
 
-            try:
-                config_2fa = usuario.config_2fa
-                if config_2fa.ativado:
-
-                    if request:
-                        request.session['usuario_pendente_2fa'] = usuario.id
-                    
-                    return None
-            except Configuracao2FA.DoesNotExist:
-                pass
-            except AttributeError:
-                pass
-
             registrar_evento_autenticacao(
                 usuario=usuario,
                 evento='login_sucesso',
@@ -61,6 +45,7 @@ class UsuarioBackend(ModelBackend):
             )
 
             return usuario
+            
         else:
             usuario.tentativas_login_falhas += 1
             
