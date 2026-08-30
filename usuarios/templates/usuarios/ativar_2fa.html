@@ -1,0 +1,69 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Ativar Autenticação de Dois Fatores" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+        </div>
+
+        <h1 class="auth-title">{% trans "Ativar 2FA" %}</h1>
+
+        <p class="auth-text">
+            {% trans "Escaneie o QR Code abaixo com o Google Authenticator ou insira a chave manualmente." %}
+        </p>
+
+        <div style="text-align: center; margin: 20px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px;">
+            <img src="data:image/png;base64,{{ qr_code }}" 
+                 alt="QR Code 2FA" 
+                 style="max-width: 200px; height: auto;">
+        </div>
+
+        <div class="auth-field">
+            <label for="chave_secreta">{% trans "Chave secreta (para inserção manual):" %}</label>
+            <input type="text" 
+                   id="chave_secreta" 
+                   value="{{ chave_secreta }}" 
+                   readonly 
+                   style="font-family: monospace; letter-spacing: 2px;">
+            <div class="auth-field__help">
+                {% trans "Copie esta chave e cole no Google Authenticator se não puder escanear o QR Code." %}
+            </div>
+        </div>
+
+        <form method="post" class="auth-form" style="margin-top: 24px;">
+            {% csrf_token %}
+            <div class="auth-field">
+                <label for="token">{% trans "Código de 6 dígitos:" %}</label>
+                <input type="text" 
+                       name="token" 
+                       id="token" 
+                       maxlength="6" 
+                       pattern="[0-9]{6}" 
+                       placeholder="000000"
+                       required 
+                       autofocus
+                       autocomplete="one-time-code">
+                <div class="auth-field__help">
+                    {% trans "Insira o código de 6 dígitos exibido no Google Authenticator." %}
+                </div>
+            </div>
+            
+            <div class="auth-form__actions">
+                <button type="submit" class="auth-btn auth-btn--primary">
+                    {% trans "Ativar 2FA" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
