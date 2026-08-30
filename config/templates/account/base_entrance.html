@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <title>{% block head_title %}ERP Escola Profissionalizante{% endblock head_title %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'auth/css/auth.css' %}">
+    
+    {% block extra_head %}{% endblock extra_head %}
+</head>
+<body>
+    {% block content %}{% endblock content %}
+    
+    <script src="{% static 'auth/js/auth.js' %}"></script>
+    
+    {% block extra_body %}{% endblock extra_body %}
+</body>
+</html>

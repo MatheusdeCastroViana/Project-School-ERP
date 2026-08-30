@@ -1,0 +1,97 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load allauth account %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Entrar no Sistema" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+
+        <h1 class="auth-title">{% trans "Entrar" %}</h1>
+
+        {% if not SOCIALACCOUNT_ONLY %}
+            <p class="auth-text">
+                {% blocktranslate with link=signup_url %}
+                    Se você ainda não criou uma conta, por favor, <a href="{{ link }}">cadastre-se</a> primeiro.
+                {% endblocktranslate %}
+            </p>
+
+            <form method="post" action="{% url 'account_login' %}" class="auth-form">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="auth-messages">
+                        {% for error in form.non_field_errors %}
+                            <div class="auth-messages__item error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="auth-fields">
+                    <!-- Campo Email -->
+                    <div class="auth-field">
+                        <label for="id_login">{% trans "E-mail" %}</label>
+                        <input type="email" name="login" id="id_login" placeholder="seu@email.com" required>
+                        {% if form.login.errors %}
+                            <div class="auth-field__error">
+                                {{ form.login.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="auth-field auth-field--password">
+                        <label for="id_password">{% trans "Senha" %}</label>
+                        <div class="auth-input-wrap">
+                            <input type="password" name="password" id="id_password" placeholder="••••••••" required>
+                            <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="auth-field__error">
+                                {{ form.password.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-checkbox">
+                            <input type="checkbox" name="remember" id="id_remember">
+                            <label for="id_remember">{% trans "Lembrar de mim" %}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="auth-form__actions">
+                    <button type="submit" class="auth-btn auth-btn--primary">
+                        {% trans "Entrar" %}
+                    </button>
+                </div>
+
+                {{ redirect_field }}
+            </form>
+        {% endif %}
+
+        {% if SOCIALACCOUNT_ENABLED %}
+            {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+    {{ block.super }}
+    <script src="{% static 'auth/js/auth.js' %}"></script>
+{% endblock %}
