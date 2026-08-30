@@ -73,12 +73,15 @@ Guardar os metadados junto com o hash (em vez de num campo separado) é o padrã
 
 **Requisito:** O sistema deverá implementar autenticação de dois fatores (2FA) para os perfis definidos como obrigatórios pelo projeto.
 
+**Decisão adotada**
+ Implementado 2FA baseado em TOTP (RFC 6238) via a biblioteca `pyotp`, compatível com apps como Google Authenticator. O modelo `Configuracao2FA` (`usuarios/models_2fa.py`) guarda a chave secreta por usuário (`chave_secreta`, gerada automaticamente no `save()` com `pyotp.random_base32()` se ainda não existir), o status `ativado` e o horário do último uso (`ultimo_uso`). A ativação acontece na view `ativar_2fa`: o usuário escaneia um QR Code (gerado em `get_qrcode_base64()`, a partir da URI de provisionamento do `pyotp`) e confirma digitando um token válido antes de `ativado` virar `True`. Existe também `desativar_2fa` pra desligar o 2FA da conta.
 
-**Decisão planejada**
-
+**Justificativa técnica**
+TOTP foi escolhido por ser um padrão aberto e amplamente suportado (não depende de SMS, que tem custo e é vulnerável a SIM swap). Exigir a confirmação de um token válido antes de marcar `ativado = True` evita que o usuário fique bloqueado pra sempre por ter escaneado um QR Code errado ou de outro app.
 
 **Evidência**
-- [Inserir print da tela de 2FA quando disponível]
+- Migração: `usuarios/migrations/0003_configuracao2fa.py`
+- [Inserir print da tela de ativação de 2FA com QR Code]
 
 ---
 
@@ -86,13 +89,15 @@ Guardar os metadados junto com o hash (em vez de num campo separado) é o padrã
 
 **Requisito:** O sistema deverá validar o segundo fator somente após a validação da autenticação primária.
 
-**Decisão planejada**
+**Decisão adotada**
+A ordem é garantida pelo próprio ponto do pipeline do `allauth` onde a checagem de 2FA foi inserida. O `Custom2FAAccountAdapter` (`usuarios/adapters.py`) sobrescreve o hook `pre_login()`, que o allauth chama **depois** de validar as credenciais (e-mail/senha, via `UsuarioBackend` — incluindo a checagem de bloqueio por força bruta) e **antes** de criar a sessão autenticada. Se o usuário tem `Configuracao2FA.ativado = True`, o `pre_login()` guarda o id dele em `request.session['usuario_pendente_2fa']` e redireciona pra `verificar_2fa`, interrompendo o fluxo normal do allauth, então nenhuma sessão é criada nesse ponto. A sessão só é criada na view `verificar_2fa`, chamando `django.contrib.auth.login()` explicitamente, e só depois de `config.verify_token(token)` retornar `True` (com tolerância de 30s via `valid_window=1`).
 
+**Justificativa técnica**
+Colocar a checagem no `pre_login()` (em vez de, por exemplo, checar 2FA dentro da própria view de login) evita duas classes de erro: (1) criar a sessão antes da hora e só "fingir" bloquear o acesso via redirect (o que deixaria um cookie de sessão válido circulando antes da confirmação do segundo fator); e (2) esquecer de checar 2FA em algum ponto de entrada alternativo, já que o hook roda pra qualquer fluxo de login que passe pelo allauth. Os eventos de verificação (sucesso/falha) são registrados via `registrar_evento_2fa()` (`usuarios/audit.py`), sem nunca logar o token em si.
 
 **Evidência**
-- [Inserir teste de fluxo: senha incorreta, código incorreto, código correto, tentativa de acesso direto sem 2FA]
-
----
+- Arquivos: `usuarios/adapters.py`, `usuarios/views_2fa.py::verificar_2fa`, `usuarios/audit.py`
+- [Inserir teste de fluxo completo, incluindo tentativa de acessar `dashboard` sem passar pelo `verificar_2fa`]
 
 ### RS 1.7 — Fluxo completo de autenticação
 
@@ -146,11 +151,14 @@ Optamos por expiração por inatividade, e não por um tempo fixo desde o login,
 
 **Requisito:** O logout deverá invalidar a sessão ativa e impedir sua reutilização.
 
-**Decisão planejada**
-[A completar: uso de `django.contrib.auth.logout()`, que já invalida a sessão do lado do servidor por padrão.]
+**Decisão adotada**
+Implementada uma view customizada de logout (`usuarios/views_2fa.py::logout_usuario`), acionada pelo botão "Sair do Sistema" no dashboard (`usuarios/templates/usuarios/dashboard.html`), via um `<form method="post">` com `{% csrf_token %}` apontando pra `usuarios:logout`. A view é decorada com `@login_required`, registra o evento de logout no log de auditoria (`registrar_evento_autenticacao`, em `usuarios/audit.py`) **antes** de destruir a sessão, e só então chama `django.contrib.auth.logout(request)` que invalida a sessão do lado do servidor (apaga os dados da sessão no banco/cache e expira o cookie `sessionid`) antes de redirecionar pra tela de login.
+
+**Justificativa técnica**
+Registrar o evento de auditoria antes de chamar `logout()` é necessário porque, depois do `logout()`, `request.user` deixa de estar associado ao usuário que estava logado (vira `AnonymousUser`) se a ordem fosse invertida, o log ficaria sem o e-mail do usuário que saiu. Usar POST (em vez de GET, como em implementações mais antigas/ingênuas de logout) evita que o logout aconteça sem intenção do usuário via prefetch de link, crawler ou CSRF de terceiros já que o form exige o token CSRF.
 
 **Evidência**
-- [Inserir teste de logout, reutilização do cookie de sessão e tentativa de acesso posterior]
+- Reproduzido de forma isolada com o `Client` de testes do Django, simulando o fluxo completo (login forçado → GET no dashboard → POST no logout → nova tentativa de GET no dashboard):
 
 ---
 
@@ -165,7 +173,7 @@ No `UsuarioBackend.authenticate()`, cada tentativa de login com senha incorreta 
 Optamos por bloqueio temporário em vez de permanente porque um bloqueio permanente exigiria intervenção manual de um administrador toda vez que um usuário legítimo errasse a senha demais, prejudicando a disponibilidade do sistema sem necessidade. Zerar o contador só após login bem-sucedido (e não após qualquer tentativa) evita que o atacante consiga "resetar" o contador de propósito.
 
 **Evidência**
-- [Inserir teste com 5+ tentativas incorretas seguidas, mostrando o bloqueio sendo aplicado]
+- ![Print da execução dos testes](evidencias/5_logins_falhos.png)
 - [Inserir print da tentativa de login durante o período de bloqueio, mesmo com senha correta]
 
 ---
@@ -197,3 +205,4 @@ Este documento (`autenticacao.md`) centraliza as decisões e justificativas dos 
 | Versão | Data | Alteração | Responsável |
 |---|---|---|---|
 | 1.0 | 29/08/2026 | Criação do documento, cobrindo RS 1.1–1.12 para a primeira entrega. | Marcos Antônio Ferreira de Araújo |
+| 1.1 | 30/08/2026 | Atualização das seções RS 1.5, 1.6 (2FA) e RS 1.10 (logout) | Marcos Antônio Ferreira de Araújo |
