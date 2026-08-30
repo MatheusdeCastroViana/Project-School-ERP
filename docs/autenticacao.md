@@ -85,7 +85,7 @@ TOTP foi escolhido em detrimento de SMS por três razões: (1) é um padrão abe
 **Evidência**
 - Código-fonte: usuarios/models_2fa.py, usuarios/views_2fa.py::ativar_2fa, usuarios/templates/usuarios/ativar_2fa.html
 - Migração: usuarios/migrations/0003_configuracao2fa.py (gerada via python manage.py makemigrations)
-- ![Print da execução dos testes](evidencias\codigo_qr_para_autenticacao.jpeg)
+- ![Print da execução dos testes](evidencias/codigo_qr_para_autenticacao.jpeg)
 
 ---
 
