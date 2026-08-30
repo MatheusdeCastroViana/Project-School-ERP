@@ -204,31 +204,8 @@ Optamos por bloqueio temporário em vez de permanente porque um bloqueio permane
 
 **Evidência**
 - ![Print da execução dos testes](evidencias/5_logins_falhos.png)
-- [Inserir print da tentativa de login durante o período de bloqueio, mesmo com senha correta]
 
 ---
-
-### RS 1.12 — Configurações coerentes documentadas
-
-**Requisito:** O sistema deverá aplicar configurações coerentes para hash, 2FA, expiração de sessão e proteção contra força bruta.
-
-
-**Decisão adotada**
-Este documento (`autenticacao.md`) centraliza as decisões e justificativas dos RS 1.1 a 1.11, servindo como o registro exigido por este item. Ele será atualizado assim que a parte de 2FA (RS 1.5/1.6) estiver implementada pelo Matheus.
-
-**Evidência**
-- Este próprio documento, mais os arquivos de código referenciados em cada seção.
-
-## 4. Arquivos relacionados
-
-| Arquivo | Conteúdo |
-|---|---|
-| `usuarios/models.py` | Modelo `Usuario`, `UsuarioManager`, login por e-mail |
-| `usuarios/backends.py` | `UsuarioBackend` — lógica de autenticação e bloqueio |
-| `usuarios/hashers.py` | `UsuarioArgon2PasswordHasher` — parâmetros de custo |
-| `usuarios/admin.py` | `UsuarioAdmin` customizado |
-| `usuarios/tests.py` | Testes automatizados de hash e autenticação |
-| `config/settings.py` | `PASSWORD_HASHERS`, `SESSION_COOKIE_AGE`, `LOGIN_MAX_TENTATIVAS` |
 
 ## 5. Histórico de alterações
 
@@ -236,3 +213,4 @@ Este documento (`autenticacao.md`) centraliza as decisões e justificativas dos 
 |---|---|---|---|
 | 1.0 | 29/08/2026 | Criação do documento, cobrindo RS 1.1–1.12 para a primeira entrega. | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 30/08/2026 | Atualização das seções RS 1.5, 1.6 (2FA) e RS 1.10 (logout) | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 30/08/2026 | Inserção da documentação do 2FA | Matheus Viana |
