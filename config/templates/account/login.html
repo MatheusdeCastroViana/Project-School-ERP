@@ -1,62 +1,97 @@
 {% extends "account/base_entrance.html" %}
-
 {% load i18n %}
 {% load allauth account %}
+{% load static %}
+
 {% block head_title %}
-    {% trans "Sign In" %}
+    {% trans "Entrar no Sistema" %}
 {% endblock head_title %}
+
 {% block content %}
-    {% element h1 %}
-        {% trans "Sign In" %}
-    {% endelement %}
-    {% if not SOCIALACCOUNT_ONLY %}
-        {% setvar link %}
-            <a href="{{ signup_url }}">
-            {% endsetvar %}
-            {% setvar end_link %}
-            </a>
-        {% endsetvar %}
-        {% element p %}
-            {% blocktranslate %}If you have not created an account yet, then please {{ link }}sign up{{ end_link }} first.{% endblocktranslate %}
-        {% endelement %}
-        {% url 'account_login' as login_url %}
-        {% element form form=form method="post" action=login_url tags="entrance,login" %}
-            {% slot body %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <!-- Badge/Logo -->
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+
+        <!-- Título -->
+        <h1 class="auth-title">{% trans "Entrar" %}</h1>
+
+        <!-- Texto de cadastro -->
+        {% if not SOCIALACCOUNT_ONLY %}
+            <p class="auth-text">
+                {% blocktranslate with link=signup_url %}
+                    Se você ainda não criou uma conta, por favor, <a href="{{ link }}">cadastre-se</a> primeiro.
+                {% endblocktranslate %}
+            </p>
+
+            <!-- Formulário de Login -->
+            <form method="post" action="{% url 'account_login' %}" class="auth-form">
                 {% csrf_token %}
-                {% element fields form=form unlabeled=True %}
-                {% endelement %}
+                
+                <div class="auth-fields">
+                    <!-- Campo Email -->
+                    <div class="auth-field">
+                        <label for="id_login">{% trans "E-mail" %}</label>
+                        <input type="email" name="login" id="id_login" placeholder="seu@email.com" required>
+                        {% if form.login.errors %}
+                            <div class="auth-field__error">
+                                {{ form.login.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Campo Senha -->
+                    <div class="auth-field auth-field--password">
+                        <label for="id_password">{% trans "Senha" %}</label>
+                        <div class="auth-input-wrap">
+                            <input type="password" name="password" id="id_password" placeholder="••••••••" required>
+                            <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </button>
+                        </div>
+                        {% if form.password.errors %}
+                            <div class="auth-field__error">
+                                {{ form.password.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="auth-field">
+                        <div class="auth-checkbox">
+                            <input type="checkbox" name="remember" id="id_remember">
+                            <label for="id_remember">{% trans "Lembrar de mim" %}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botão de Submit -->
+                <div class="auth-form__actions">
+                    <button type="submit" class="auth-btn auth-btn--primary">
+                        {% trans "Entrar" %}
+                    </button>
+                </div>
+
                 {{ redirect_field }}
-            {% endslot %}
-            {% slot actions %}
-                {% element button type="submit" tags="prominent,login" %}
-                    {% trans "Sign In" %}
-                {% endelement %}
-            {% endslot %}
-        {% endelement %}
-    {% endif %}
-    {% if LOGIN_BY_CODE_ENABLED or PASSKEY_LOGIN_ENABLED %}
-        {% element hr %}
-        {% endelement %}
-        {% element button_group vertical=True %}
-            {% if PASSKEY_LOGIN_ENABLED %}
-                {% element button type="submit" form="mfa_login" id="passkey_login" tags="prominent,login,outline,primary" %}
-                    {% trans "Sign in with a passkey" %}
-                {% endelement %}
-            {% endif %}
-            {% if LOGIN_BY_CODE_ENABLED %}
-                {% element button href=request_login_code_url tags="prominent,login,outline,primary" %}
-                    {% trans "Send me a sign-in code" %}
-                {% endelement %}
-            {% endif %}
-        {% endelement %}
-    {% endif %}
-    {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
-    {% endif %}
+            </form>
+        {% endif %}
+
+        <!-- Login Social -->
+        {% if SOCIALACCOUNT_ENABLED %}
+            {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+        {% endif %}
+    </div>
+</div>
 {% endblock content %}
+
 {% block extra_body %}
     {{ block.super }}
-    {% if PASSKEY_LOGIN_ENABLED %}
-        {% include "mfa/webauthn/snippets/login_script.html" with button_id="passkey_login" %}
-    {% endif %}
+    <script src="{% static 'auth/js/auth.js' %}"></script>
 {% endblock %}
