@@ -1,0 +1,106 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load allauth account %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Criar Conta" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <!-- Badge/Ícone de Cadastro -->
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+        </div>
+
+        <!-- Título -->
+        <h1 class="auth-title">{% trans "Criar Conta" %}</h1>
+
+        <!-- Link para retornar ao login -->
+        <p class="auth-text">
+            {% blocktranslate with login_url=login_url %}
+                Já possui uma conta? <a href="{{ login_url }}">Faça login</a>.
+            {% endblocktranslate %}
+        </p>
+
+        <!-- Formulário de Cadastro -->
+        <!-- O método POST e a tag csrf_token são obrigatórios para segurança contra ataques CSRF -->
+        <form method="post" action="{% url 'account_signup' %}" class="auth-form" novalidate>
+            {% csrf_token %}
+            
+            <div class="auth-fields">
+                <!-- Campo E-mail -->
+                <div class="auth-field">
+                    <label for="id_email">{% trans "E-mail" %}</label>
+                    <input type="email" name="email" id="id_email" placeholder="seu@email.com" required autocomplete="email">
+                    {% if form.email.errors %}
+                        <div class="auth-field__error">
+                            {{ form.email.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Campo Senha -->
+                <div class="auth-field auth-field--password">
+                    <label for="id_password1">{% trans "Senha" %}</label>
+                    <div class="auth-input-wrap">
+                        <input type="password" name="password1" id="id_password1" placeholder="••••••••" required autocomplete="new-password">
+                        <!-- Botão para mostrar/ocultar senha (funcionalidade via JS) -->
+                        <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    {% if form.password1.errors %}
+                        <div class="auth-field__error">
+                            {{ form.password1.errors.0 }}
+                        </div>
+                    {% endif %}
+                    <!-- Ajuda do Django sobre requisitos da senha (ex: 8 caracteres, não ser comum, etc.) -->
+                    {% if form.password1.help_text %}
+                        <div class="auth-field__help">{{ form.password1.help_text|safe }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Campo Confirmar Senha -->
+                <div class="auth-field auth-field--password">
+                    <label for="id_password2">{% trans "Confirmar Senha" %}</label>
+                    <div class="auth-input-wrap">
+                        <input type="password" name="password2" id="id_password2" placeholder="••••••••" required autocomplete="new-password">
+                        <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    {% if form.password2.errors %}
+                        <div class="auth-field__error">
+                            {{ form.password2.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botão de Envio -->
+            <div class="auth-form__actions">
+                <button type="submit" class="auth-btn auth-btn--primary">
+                    {% trans "Cadastrar" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+    {{ block.super }}
+    <!-- Script para funcionalidade de mostrar/ocultar senha -->
+    <script src="{% static 'auth/js/auth.js' %}"></script>
+{% endblock %}

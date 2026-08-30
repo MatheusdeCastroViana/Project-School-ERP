@@ -2,71 +2,46 @@
 
 Sistema web para gestão integrada de escolas profissionalizantes e de formação complementar.
 
-## Stack tecnológica
+## Status do Projeto
+Este projeto está em desenvolvimento ativo como parte de um Projeto Integrador. Atualmente, o módulo de **Autenticação e Segurança** está completo e em conformidade com os requisitos de segurança da informação, incluindo 2FA, proteção contra força bruta e logs de auditoria.
 
-A aplicação será desenvolvida utilizando **Python** como linguagem principal e **Django** como framework web. O banco de dados utilizado será o **PostgreSQL**.
+## 🛠️ Stack Tecnológica
 
-As versões específicas das tecnologias serão definidas posteriormente, durante a configuração do ambiente de desenvolvimento e a criação do projeto.
+A aplicação é desenvolvida utilizando Python como linguagem principal e Django como framework web. O banco de dados utilizado é o PostgreSQL.
 
 | Categoria | Tecnologia | Versão |
-|---|---|---|
-| Linguagem de programação | Python | 3.14.6 |
+| :--- | :--- | :--- |
+| Linguagem de programação | Python | 3.14.x |
 | Framework web | Django | 6.1 |
-| Banco de dados | PostgreSQL | 18.6 |
+| Banco de dados | PostgreSQL | 18.x |
+| Autenticação | `django-allauth` + `pyotp` | Latest |
+| Variáveis de ambiente | `python-decouple` | Latest |
 
-## Arquitetura da aplicação
+## Arquitetura da Aplicação
 
-O sistema utilizará a arquitetura **MVT — Model, View e Template**, padrão do framework Django. Essa arquitetura organiza a aplicação em responsabilidades separadas, facilitando a manutenção, a evolução e a organização do código.
+O sistema utiliza a arquitetura **MVT (Model, View, Template)**, padrão do framework Django. Essa arquitetura organiza a aplicação em responsabilidades separadas, facilitando a manutenção, a evolução e a organização do código.
 
-### Model
+- **Model:** Representam os dados e as regras de persistência. Definem as entidades, campos, relacionamentos e comportamentos no PostgreSQL.
+- **View:** Processam as requisições, aplicam regras de negócio, consultam/alteram Models e encaminham dados aos Templates. Também gerenciam permissões e validações de segurança.
+- **Template:** Responsáveis pela apresentação (HTML, formulários, tabelas). Exibem apenas funcionalidades compatíveis com o perfil do usuário, sem substituir as validações de backend.
 
-Os **Models** representam os dados e as regras relacionadas à persistência das informações. Eles serão responsáveis por definir as entidades do sistema, seus campos, relacionamentos e comportamentos associados ao banco de dados PostgreSQL.
+## 📂 Organização por Aplicações (Apps)
 
-Exemplos de entidades que poderão ser representadas por Models incluem alunos, funcionários, cursos, turmas, matrículas, contratos, mensalidades, notas e materiais.
+O sistema é dividido em aplicações independentes, seguindo a organização recomendada pelo Django. 
 
-### View
-
-As **Views** serão responsáveis por processar as requisições, aplicar as regras de negócio, consultar ou alterar os Models e encaminhar os dados para os Templates apropriados.
-
-As Views também deverão verificar as permissões dos usuários antes de permitir operações como cadastrar informações, lançar notas, consultar dados financeiros ou gerar relatórios.
-
-### Template
-
-Os **Templates** serão responsáveis pela apresentação das informações ao usuário. Neles serão construídas as páginas HTML, os formulários, as tabelas, os menus e os demais elementos da interface web.
-
-Os Templates deverão exibir somente as funcionalidades compatíveis com o perfil de acesso do usuário, sem substituir as validações de segurança realizadas nas Views e nas demais camadas da aplicação.
-
-## Organização por aplicações Django
-
-O sistema será dividido em aplicações independentes, chamadas de **apps**, seguindo a organização recomendada pelo Django. Cada app deverá agrupar funcionalidades relacionadas a um determinado domínio do sistema.
-
-A divisão final dos apps será definida durante o desenvolvimento, mas poderá seguir uma estrutura semelhante à apresentada abaixo:
-
+### Estrutura Atual Implementada:
 ```text
-erp_escola/
+Project-School-ERP/
 ├── manage.py
-├── config/
-│   ├── settings.py
-│   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
-├── usuarios/
-├── alunos/
-├── funcionarios/
-├── cursos/
-├── turmas/
-├── matriculas/
-├── contratos/
-├── financeiro/
-├── pedagogico/
-├── estoque/
-├── relatorios/
-├── templates/
-├── static/
-└── requirements.txt
-```
-
-A estrutura acima é uma referência inicial. Os nomes, a quantidade e a divisão dos apps poderão ser ajustados conforme a modelagem do sistema e a evolução do projeto.
+├── config/                 # Configurações centrais do projeto (settings, urls, wsgi)
+│   ├── templates/          # Templates globais (ex: allauth customizado)
+├── usuarios/               # App de autenticação, usuários, 2FA e auditoria
+├── funcionarios/           # App de gestão de funcionários (vinculado ao usuário)
+├── static/                 # Arquivos estáticos (CSS, JS, Imagens)
+├── logs/                   # Logs de auditoria de segurança (gerado automaticamente)
+├── .env                    # Variáveis de ambiente (não versionado)
+├── .env.example            # Exemplo de variáveis de ambiente
+└── requirements.txt        # Dependências do projeto
 
 ## Princípios de organização
 

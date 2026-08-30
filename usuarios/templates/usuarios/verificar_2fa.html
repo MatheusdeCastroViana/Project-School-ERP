@@ -1,0 +1,52 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Verificação de Dois Fatores" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+
+        <h1 class="auth-title">{% trans "Verificação 2FA" %}</h1>
+
+        <p class="auth-text">
+            {% trans "Insira o código de 6 dígitos do seu aplicativo autenticador (Google Authenticator, Authy, etc.)." %}
+        </p>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            <div class="auth-field">
+                <label for="token">{% trans "Código 2FA:" %}</label>
+                <input type="text" 
+                       name="token" 
+                       id="token" 
+                       maxlength="6" 
+                       pattern="[0-9]{6}" 
+                       placeholder="000000"
+                       required 
+                       autofocus
+                       autocomplete="one-time-code"
+                       style="text-align: center; font-size: 24px; letter-spacing: 8px; font-family: monospace;">
+                <div class="auth-field__help">
+                    {% trans "O código expira a cada 30 segundos." %}
+                </div>
+            </div>
+            
+            <div class="auth-form__actions">
+                <button type="submit" class="auth-btn auth-btn--primary">
+                    {% trans "Verificar" %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock content %}
