@@ -11,7 +11,7 @@ A aplicação é desenvolvida utilizando Python como linguagem principal e Djang
 
 | Categoria | Tecnologia | Versão |
 | :--- | :--- | :--- |
-| Linguagem de programação | Python | 3.14.x |
+| Linguagem de programação | Python | 3.14.6 |
 | Framework web | Django | 6.1 |
 | Banco de dados | PostgreSQL | 18.6 |
 | Autenticação | `django-allauth` + `pyotp` | 65.19.1 + 2.10.0 |
