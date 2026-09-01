@@ -83,10 +83,12 @@ DATABASES = {
 }
 
 
-
+# Expiração de sessão por inatividade
 SESSION_COOKIE_AGE = 1800  
 SESSION_SAVE_EVERY_REQUEST = True
 
+# Hasher de senha Argon2id como primeira opção
+# PBKDF2 como segunda opção
 PASSWORD_HASHERS = [
     'usuarios.hashers.UsuarioArgon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -128,6 +130,11 @@ ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"  
 LOGIN_REDIRECT_URL = '/usuarios/dashboard/' 
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Resetar a senha passando por CustomResetPassword para usar Usuario.email direto ao invés de EmailAdress
+ACCOUNT_FORMS = {
+    "reset_password": "usuarios.forms.CustomResetPasswordForm",
+}
 
 
 LANGUAGE_CODE = 'pt-br'
