@@ -1,5 +1,6 @@
 from allauth.account.forms import ResetPasswordForm
 from django.contrib.auth import get_user_model
+from usuarios.audit import registrar_evento_recuperacao_senha
 
 Usuario = get_user_model()
 
@@ -15,3 +16,15 @@ class CustomResetPasswordForm(ResetPasswordForm): # Herda os atributos da classe
         )
 
         return email
+
+
+    def save(self, request, **kwargs):
+        ip_address = request.META.get("REMOTE_ADDR") if request else None
+
+        registrar_evento_recuperacao_senha(
+            email=self.cleaned_data["email"],
+            encontrado=bool(self.users), # Não mostra qual é o usuário
+            ip_address=ip_address,
+        )
+
+        return super().save(request, **kwargs)

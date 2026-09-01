@@ -37,3 +37,13 @@ def registrar_evento_autenticacao(usuario, evento, sucesso, ip_address=None):
         logger_seguranca.info(mensagem)
     else:
         logger_seguranca.warning(mensagem)
+
+def registrar_evento_recuperacao_senha(email, encontrado, ip_address=None):
+
+    mensagem = (
+        f"Recuperação de senha solicitada | Email: {email} | "
+        f"Usuário encontrado: {encontrado} | "
+        f"IP: {ip_address or 'N/A'}" 
+    )
+
+    logger_seguranca.info(mensagem)
