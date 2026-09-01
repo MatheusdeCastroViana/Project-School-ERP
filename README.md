@@ -5,17 +5,17 @@ Sistema web para gestão integrada de escolas profissionalizantes e de formaçã
 ## Status do Projeto
 Este projeto está em desenvolvimento ativo como parte de um Projeto Integrador. Atualmente, o módulo de **Autenticação e Segurança** está completo e em conformidade com os requisitos de segurança da informação, incluindo 2FA, proteção contra força bruta e logs de auditoria.
 
-## 🛠️ Stack Tecnológica
+## Stack Tecnológica
 
 A aplicação é desenvolvida utilizando Python como linguagem principal e Django como framework web. O banco de dados utilizado é o PostgreSQL.
 
 | Categoria | Tecnologia | Versão |
 | :--- | :--- | :--- |
-| Linguagem de programação | Python | 3.14.x |
+| Linguagem de programação | Python | 3.14.6 |
 | Framework web | Django | 6.1 |
-| Banco de dados | PostgreSQL | 18.x |
-| Autenticação | `django-allauth` + `pyotp` | Latest |
-| Variáveis de ambiente | `python-decouple` | Latest |
+| Banco de dados | PostgreSQL | 18.6 |
+| Autenticação | `django-allauth` + `pyotp` | 65.19.1 + 2.10.0 |
+| Variáveis de ambiente | `python-decouple` | 3.8 |
 
 ## Arquitetura da Aplicação
 
@@ -25,7 +25,7 @@ O sistema utiliza a arquitetura **MVT (Model, View, Template)**, padrão do fram
 - **View:** Processam as requisições, aplicam regras de negócio, consultam/alteram Models e encaminham dados aos Templates. Também gerenciam permissões e validações de segurança.
 - **Template:** Responsáveis pela apresentação (HTML, formulários, tabelas). Exibem apenas funcionalidades compatíveis com o perfil do usuário, sem substituir as validações de backend.
 
-## 📂 Organização por Aplicações (Apps)
+## Organização por Aplicações (Apps)
 
 O sistema é dividido em aplicações independentes, seguindo a organização recomendada pelo Django. 
 
@@ -42,8 +42,8 @@ Project-School-ERP/
 ├── .env                    # Variáveis de ambiente (não versionado)
 ├── .env.example            # Exemplo de variáveis de ambiente
 └── requirements.txt        # Dependências do projeto
-
-## Princípios de organização
+```
+# Princípios de organização
 
 Cada app deverá concentrar Models, Views, URLs, formulários, arquivos administrativos, testes e demais componentes relacionados à sua responsabilidade. O objetivo é evitar a concentração de todo o código em um único módulo.
 
