@@ -134,6 +134,8 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 # Resetar a senha passando por CustomResetPassword para usar Usuario.email direto ao invés de EmailAdress
 ACCOUNT_FORMS = {
     "reset_password": "usuarios.forms.CustomResetPasswordForm",
+    "reset_password_from_key": "usuarios.forms.CustomResetPasswordKeyForm",
+    "user_token": "usuarios.forms.CustomUserTokenForm",
 }
 
 
