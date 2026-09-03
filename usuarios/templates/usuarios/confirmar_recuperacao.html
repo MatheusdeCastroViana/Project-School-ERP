@@ -1,0 +1,113 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Definir Nova Senha" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+
+        <h1 class="auth-title">{% trans "Definir Nova Senha" %}</h1>
+
+        <p class="auth-text">
+            {% trans "Digite sua nova senha abaixo. O link de recuperação expira em 24 horas." %}
+        </p>
+
+        {% if messages %}
+            <div class="auth-messages">
+                {% for message in messages %}
+                    <div class="auth-messages__item {% if message.tags %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="auth-fields">
+                <div class="auth-field auth-field--password">
+                    <label for="id_senha1">{% trans "Nova senha" %}</label>
+                    <div class="auth-input-wrap">
+                        <input type="password" 
+                               name="senha1" 
+                               id="id_senha1" 
+                               placeholder="••••••••" 
+                               required 
+                               autocomplete="new-password">
+                        <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    {% if form.senha1.errors %}
+                        <div class="auth-field__error">
+                            {{ form.senha1.errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="auth-field__help">
+                        {% trans "Mínimo 8 caracteres. Não use senhas comuns ou muito similares ao e-mail." %}
+                    </div>
+                </div>
+
+                <div class="auth-field auth-field--password">
+                    <label for="id_senha2">{% trans "Confirme a nova senha" %}</label>
+                    <div class="auth-input-wrap">
+                        <input type="password" 
+                               name="senha2" 
+                               id="id_senha2" 
+                               placeholder="••••••••" 
+                               required 
+                               autocomplete="new-password">
+                        <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    {% if form.senha2.errors %}
+                        <div class="auth-field__error">
+                            {{ form.senha2.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="auth-form__actions">
+                <button type="submit" class="auth-btn auth-btn--primary">
+                    {% trans "Alterar senha" %}
+                </button>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 16px; font-size: 12px; color: var(--auth-muted);">
+            {% trans "Link válido até:" %} {{ expira_em|date:"d/m/Y H:i" }}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_body %}
+    {{ block.super }}
+    <script src="{% static 'auth/js/auth.js' %}"></script>
+{% endblock %}

@@ -185,3 +185,7 @@ LOGGING = {
 OTP_LOGIN_URL = '/usuarios/verify-2fa/'
 
 ACCOUNT_ADAPTER = 'usuarios.adapters.Custom2FAAccountAdapter'
+
+TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24
+
+LOGIN_URL = '/accounts/login/'
