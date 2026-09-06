@@ -1,0 +1,75 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block head_title %}
+    {% trans "Recuperação de Senha" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-card__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+        </div>
+
+        <h1 class="auth-title">{% trans "Recuperação de Senha" %}</h1>
+
+        <p class="auth-text">
+            {% trans "Informe o e-mail cadastrado no sistema. Se o e-mail existir, você receberá um link para redefinir sua senha." %}
+        </p>
+
+        {% if messages %}
+            <div class="auth-messages">
+                {% for message in messages %}
+                    <div class="auth-messages__item {% if message.tags %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            
+            <div class="auth-fields">
+                <div class="auth-field">
+                    <label for="id_email">{% trans "E-mail" %}</label>
+                    <input type="email" 
+                           name="email" 
+                           id="id_email" 
+                           placeholder="seu@email.com" 
+                           required 
+                           autocomplete="email"
+                           value="{{ form.email.value|default:'' }}">
+                    
+                    {% if form.email.errors %}
+                        <div class="auth-field__error">
+                            {{ form.email.errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="auth-field__help">
+                        {% trans "Informe o e-mail cadastrado no sistema." %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-form__actions">
+                <button type="submit" class="auth-btn auth-btn--primary">
+                    {% trans "Enviar link de recuperação" %}
+                </button>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="{% url 'account_login' %}" class="auth-text" style="font-size: 13px;">
+                {% trans "Voltar para o login" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
