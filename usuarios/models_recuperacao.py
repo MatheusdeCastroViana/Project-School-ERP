@@ -62,10 +62,11 @@ class TokenRecuperacaoSenha(models.Model):
             # Gera string aleatória de 64 caracteres e faz hash SHA256
             string_aleatoria = secrets.token_urlsafe(64)
             self.token = hashlib.sha256(string_aleatoria.encode()).hexdigest()
-        
+
         if not self.expira_em:
-            self.expira_em = timezone.now() + timedelta(hours=24)
-        
+            horas = getattr(settings, 'TOKEN_RECUPERACAO_EXPIRACAO_HORAS', 24)
+            self.expira_em = timezone.now() + timedelta(hours=horas)
+
         super().save(*args, **kwargs)
 
     def is_valido(self):

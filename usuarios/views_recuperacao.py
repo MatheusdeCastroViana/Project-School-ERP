@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.cache import never_cache
 from .models_recuperacao import TokenRecuperacaoSenha
 from .forms_recuperacao import SolicitarRecuperacaoForm, NovaSenhaForm
+from usuarios.audit import registrar_evento_recuperacao_senha, registrar_resultado_recuperacao_senha
 
 Usuario = get_user_model()
 
@@ -15,23 +16,29 @@ Usuario = get_user_model()
 def solicitar_recuperacao(request):
     if request.method == 'POST':
         form = SolicitarRecuperacaoForm(request.POST)
-        
+
         if form.is_valid():
             usuario = form.usuario_encontrado
-            
+            ip_address = request.META.get('REMOTE_ADDR')
+
+            # Registra a tentativa mesmo que não ache o usuário
+            registrar_evento_recuperacao_senha(
+                email=form.cleaned_data['email'],
+                encontrado=bool(usuario),
+                ip_address=ip_address,
+            )
+
             if usuario:
                 token = TokenRecuperacaoSenha.objects.create(
                     usuario=usuario,
-                    ip_solicitacao=request.META.get('REMOTE_ADDR'),
+                    ip_solicitacao=ip_address,
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
-                
-                # TODO: Integrar com sistema de e-mail do Marcos
-                # Por enquanto, exibe o link no console (desenvolvimento)
+
                 link_recuperacao = request.build_absolute_uri(
                     f'/usuarios/recuperar-senha/{token.token}/'
                 )
-                
+
                 print(f"\n{'='*60}")
                 print(f"LINK DE RECUPERAÇÃO DE SENHA (Ambiente de Desenvolvimento)")
                 print(f"{'='*60}")
@@ -40,14 +47,6 @@ def solicitar_recuperacao(request):
                 print(f"Expira em: {token.expira_em}")
                 print(f"Link: {link_recuperacao}")
                 print(f"{'='*60}\n")
-                
-                # Marcos - Aqui você integrará com o sistema de logs
-                # registrar_evento_recuperacao_senha(
-                #     email=usuario.email,
-                #     evento='solicitacao',
-                #     sucesso=True,
-                #     ip_address=request.META.get('REMOTE_ADDR')
-                # )
 
             messages.success(
                 request,
@@ -57,7 +56,7 @@ def solicitar_recuperacao(request):
             return redirect('usuarios:solicitar_recuperacao')
     else:
         form = SolicitarRecuperacaoForm()
-    
+
     context = {'form': form}
     return render(request, 'usuarios/solicitar_recuperacao.html', context)
 
@@ -65,45 +64,51 @@ def solicitar_recuperacao(request):
 @csrf_protect
 @never_cache
 def confirmar_recuperacao(request, token):
- 
+
     try:
         token_obj = TokenRecuperacaoSenha.objects.get(token=token)
     except TokenRecuperacaoSenha.DoesNotExist:
+        # RS 2.7 — falha: token nem existe no banco
+        registrar_resultado_recuperacao_senha(
+            usuario=None,
+            sucesso=False,
+            motivo="token inexistente",
+        )
         messages.error(
             request,
             'Link de recuperação inválido ou expirado. '
             'Por favor, solicite um novo link.'
         )
         return redirect('usuarios:solicitar_recuperacao')
-    
+
     if not token_obj.is_valido():
+        # Se o token existe, mas expirou ou já foi usado
+        motivo = "token já utilizado" if token_obj.utilizado else "token expirado"
+        registrar_resultado_recuperacao_senha(
+            usuario=token_obj.usuario,
+            sucesso=False,
+            motivo=motivo,
+        )
         messages.error(
             request,
             'Link de recuperação inválido ou expirado. '
             'Por favor, solicite um novo link.'
         )
         return redirect('usuarios:solicitar_recuperacao')
-    
+
     if request.method == 'POST':
         form = NovaSenhaForm(request.POST)
-        
+
         if form.is_valid():
-            # Atualiza a senha do usuário
             usuario = token_obj.usuario
             usuario.set_password(form.cleaned_data['senha1'])
             usuario.save()
-            
-            # Invalida o token após uso bem-sucedido (RS 2.4)
+
             token_obj.marcar_como_utilizado()
-            
-            # Marcos - Registrar sucesso no log
-            # registrar_evento_recuperacao_senha(
-            #     email=usuario.email,
-            #     evento='senha_alterada',
-            #     sucesso=True,
-            #     ip_address=request.META.get('REMOTE_ADDR')
-            # )
-            
+
+            # Sucesso no log
+            registrar_resultado_recuperacao_senha(usuario=usuario, sucesso=True)
+
             messages.success(
                 request,
                 'Senha alterada com sucesso! Você já pode fazer login com a nova senha.'
@@ -111,7 +116,7 @@ def confirmar_recuperacao(request, token):
             return redirect('account_login')
     else:
         form = NovaSenhaForm()
-    
+
     context = {
         'form': form,
         'token': token,
