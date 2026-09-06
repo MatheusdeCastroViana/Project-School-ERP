@@ -42,8 +42,8 @@ Optamos por implementar um fluxo próprio em vez de utilizar o mecanismo de recu
 ### Evidências
 
 - **Arquivos**: usuarios/models_recuperacao.py, usuarios/forms_recuperacao.py, usuarios/views_recuperacao.py, config/templates/account/login.html
-- **Print da tela de solicitação** (evidencias/enviar_link_de_recuperacao.png): formulário com campo de e-mail e botão de envio
-- **Print do terminal** (evidencias/codigo_de_recuperacao_no_terminal.png): bloco destacado exibindo o link de recuperação gerado, contendo o token e o horário de expiração
+- **Print da tela de solicitação** ![Print da tela de solicitação](evidencias/enviar_link_de_recuperacao.png): formulário com campo de e-mail e botão de envio
+- **Print do terminal** ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png): bloco destacado exibindo o link de recuperação gerado, contendo o token e o horário de expiração
 
 ---
 
@@ -73,7 +73,7 @@ A combinação secrets + SHA-256 atende a três objetivos de segurança:
 ### Evidências
 
 - **Arquivo:** usuarios/models_recuperacao.py (método save())
-- **Print do terminal (evidencias/codigo_de_recuperacao_no_terminal.png):** exemplo de token gerado com 64 caracteres hexadecimais
+- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** exemplo de token gerado com 64 caracteres hexadecimais
 - **Inspeção do banco:** campo token da tabela usuarios_tokenrecuperacaosenha contendo apenas o hash, nunca a string original
 
 ## RS 2.3 - Token com tempo de expiração
@@ -101,8 +101,8 @@ O valor de 24 horas está alinhado com as recomendações do OWASP, que sugere j
 
 - **Arquivo:** usuarios/models_recuperacao.py (método save() e is_valido())
 - **Configuração:** config/settings.py (TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24)
-- **Print do terminal (evidencias/codigo_de_recuperacao_no_terminal.png):** campo "Expira em" exibindo o timestamp de expiração
-- **Print de token expirado (codigo_de_recuperacao_expirado.png):** mensagem genérica de erro ao tentar usar token fora do prazo
+- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** campo "Expira em" exibindo o timestamp de expiração
+- **Print de token expirado ![Print de token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica de erro ao tentar usar token fora do prazo
 
 ## RS 2.4 - Token invalidado após uso
 
@@ -150,4 +150,64 @@ Ao unificar todas as falhas em uma única mensagem, o sistema adere ao princípi
 ### Evidências
 
 - **Arquivo:** usuarios/views_recuperacao.py::confirmar_recuperacao
-- **Print de token expirado (evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica exibida ao usuário
+- **Print de token expirado ![Print do token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica exibida ao usuário
+
+## Logs de recuperação de senha
+
+Os logs de recuperação de senha foram implementados para atender aos requisitos **RS 2.6** (registro de solicitação sem expor segredos) e **RS 2.7** (registro de sucesso ou falha do processo), além da regra de negócio **RN-10** (credenciais, tokens completos e códigos 2FA não deverão ser registrados em logs).
+
+### Configuração de logging
+
+O sistema utiliza o módulo `logging` do Python, configurado em `config/settings.py` com as seguintes características:
+
+- **Logger dedicado**: `auditoria_seguranca` (separado dos logs gerais do Django)
+- **Destino**: Arquivo `logs/auditoria_seguranca.log` e console (em desenvolvimento)
+- **Formato**: `{levelname} {asctime} {module} {message}` (timestamp, nível, módulo e mensagem)
+- **Nível mínimo**: `INFO` (registra eventos informativos e avisos)
+
+### Funções para logs de recuperação de senha
+
+**1. `registrar_evento_recuperacao_senha(email, encontrado, ip_address)`**
+
+Registrada na solicitação inicial (quando o usuário informa o e-mail na tela de recuperação).
+
+Parâmetros capturados:
+- `email`: E-mail informado pelo usuário
+- `encontrado`: Booleano indicando se o usuário existe no banco
+- `ip_address`: Endereço IP de origem da solicitação
+
+**2. `registrar_resultado_recuperacao_senha(usuario, sucesso, motivo)`**
+
+Registrada na conclusão do processo (sucesso ou falha na redefinição da senha).
+
+Parâmetros capturados:
+- `usuario`: Objeto do usuário (se identificado) ou `None`
+- `sucesso`: Booleano indicando se a redefinição foi bem-sucedida
+- `motivo`: String opcional com o motivo da falha (quando aplicável)
+
+Motivos registrados:
+- `"token inexistente"`: Token não encontrado no banco
+- `"token expirado"`: Token fora do prazo de validade
+- `"token já utilizado"`: Token já consumido em tentativa anterior
+
+### Segurança dos logs
+
+Os logs **nunca registram** informações sensíveis:
+- Token completo
+- Senha (antiga ou nova)
+- Apenas e-mail, IP, status de sucesso/falha e motivo genérico da falha
+
+### Evidências
+
+- **Arquivo de configuração**: `config/settings.py` (seção `LOGGING`)
+- **Arquivo de auditoria**: `usuarios/audit.py` (funções de registro)
+- **Testes automatizados**: Rodar `python manage.py test usuarios`
+- **Print dos logs gerados**: ![Print dos logs gerados pelo teste automatizado](evidencias/logs_recuperacao_senha.jpg)
+
+
+## Histórico de alterações
+
+| Versão | Data | Alteração | Responsável |
+|---|---|---|---|
+| 1.0 | 05/09/2026 | Criação do documento, cobrindo os requisitos de recuperação de senha | Matheus de Castro Viana |
+| 1.1 | 06/09/2026 | Adição da documentação relativa aos logs de recuperação de senha | Marcos Antônio Ferreira de Araújo |
