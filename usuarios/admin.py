@@ -14,14 +14,15 @@ class UsuarioAdmin(UserAdmin):
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
+        ('Vínculo', {'fields': ('funcionario',)}),
         ('Permissões', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Segurança', {'fields': ('tentativas_login_falhas', 'bloqueado_ate')}),
     )
-    
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'is_staff', 'is_active'),
+            'fields': ('email', 'funcionario', 'password1', 'password2', 'is_staff', 'is_active'),
         }),
     )
 

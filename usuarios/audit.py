@@ -8,16 +8,16 @@ logger_seguranca = logging.getLogger('auditoria_seguranca')
 
 
 def registrar_evento_2fa(usuario, evento, sucesso, ip_address=None, detalhes=None):
-   
+
     mensagem = (
         f"Evento 2FA | Usuário: {usuario.email} | "
         f"Evento: {evento} | Sucesso: {sucesso} | "
         f"IP: {ip_address or 'N/A'}"
     )
-    
+
     if detalhes:
         mensagem += f" | Detalhes: {detalhes}"
-    
+
     if sucesso:
         logger_seguranca.info(mensagem)
     else:
@@ -31,7 +31,7 @@ def registrar_evento_autenticacao(usuario, evento, sucesso, ip_address=None):
         f"Evento: {evento} | Sucesso: {sucesso} | "
         f"IP: {ip_address or 'N/A'}"
     )
-    
+
     if sucesso:
         logger_seguranca.info(mensagem)
     else:
@@ -42,10 +42,13 @@ def registrar_evento_recuperacao_senha(email, encontrado, ip_address=None):
     mensagem = (
         f"Recuperação de senha solicitada | Email: {email} | "
         f"Usuário encontrado: {encontrado} | "
-        f"IP: {ip_address or 'N/A'}" 
+        f"IP: {ip_address or 'N/A'}"
     )
 
-    logger_seguranca.info(mensagem)
+    if encontrado:
+        logger_seguranca.info(mensagem)
+    else:
+        logger_seguranca.warning(mensagem)
 
 def registrar_resultado_recuperacao_senha(usuario, sucesso, motivo=None):
     mensagem = (
