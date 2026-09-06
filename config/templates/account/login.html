@@ -10,14 +10,17 @@
 {% block content %}
 <div class="auth-shell">
     <div class="auth-card">
+        <!-- Badge/Logo -->
         <div class="auth-card__badge">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
         </div>
 
+        <!-- Título -->
         <h1 class="auth-title">{% trans "Entrar" %}</h1>
 
+        <!-- Texto de cadastro -->
         {% if not SOCIALACCOUNT_ONLY %}
             <p class="auth-text">
                 {% blocktranslate with link=signup_url %}
@@ -25,9 +28,11 @@
                 {% endblocktranslate %}
             </p>
 
+            <!-- Formulário de Login -->
             <form method="post" action="{% url 'account_login' %}" class="auth-form">
                 {% csrf_token %}
                 
+                <!-- Exibe erros genéricos (senha errada, conta bloqueada, etc.) -->
                 {% if form.non_field_errors %}
                     <div class="auth-messages">
                         {% for error in form.non_field_errors %}
@@ -40,7 +45,7 @@
                     <!-- Campo Email -->
                     <div class="auth-field">
                         <label for="id_login">{% trans "E-mail" %}</label>
-                        <input type="email" name="login" id="id_login" placeholder="seu@email.com" required>
+                        <input type="email" name="login" id="id_login" placeholder="seu@email.com" required autocomplete="email">
                         {% if form.login.errors %}
                             <div class="auth-field__error">
                                 {{ form.login.errors.0 }}
@@ -48,11 +53,13 @@
                         {% endif %}
                     </div>
 
+                    <!-- Campo Senha -->
                     <div class="auth-field auth-field--password">
                         <label for="id_password">{% trans "Senha" %}</label>
                         <div class="auth-input-wrap">
-                            <input type="password" name="password" id="id_password" placeholder="••••••••" required>
-                            <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Mostrar senha' %}">
+                            <input type="password" name="password" id="id_password" placeholder="••••••••" required autocomplete="current-password">
+                            <!-- Botão "segurar para ver" a senha -->
+                            <button type="button" class="auth-toggle-password" data-toggle-password aria-label="{% trans 'Segure para mostrar senha' %}">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -66,6 +73,15 @@
                         {% endif %}
                     </div>
 
+                    <!-- Link "Esqueceu a senha?" -->
+                    <div style="text-align: right; margin-top: -8px;">
+                        <a href="{% url 'usuarios:solicitar_recuperacao' %}" 
+                           style="font-size: 13px; color: var(--auth-accent); text-decoration: none; font-weight: 600;">
+                            {% trans "Esqueceu a senha?" %}
+                        </a>
+                    </div>
+
+                    <!-- Remember Me -->
                     <div class="auth-field">
                         <div class="auth-checkbox">
                             <input type="checkbox" name="remember" id="id_remember">
@@ -74,6 +90,7 @@
                     </div>
                 </div>
 
+                <!-- Botão de Submit -->
                 <div class="auth-form__actions">
                     <button type="submit" class="auth-btn auth-btn--primary">
                         {% trans "Entrar" %}
@@ -84,6 +101,7 @@
             </form>
         {% endif %}
 
+        <!-- Login Social -->
         {% if SOCIALACCOUNT_ENABLED %}
             {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
         {% endif %}
