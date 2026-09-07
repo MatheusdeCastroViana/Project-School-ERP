@@ -83,10 +83,12 @@ DATABASES = {
 }
 
 
-
+# Expiração de sessão por inatividade
 SESSION_COOKIE_AGE = 1800  
 SESSION_SAVE_EVERY_REQUEST = True
 
+# Hasher de senha Argon2id como primeira opção
+# PBKDF2 como segunda opção
 PASSWORD_HASHERS = [
     'usuarios.hashers.UsuarioArgon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -128,7 +130,6 @@ ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"  
 LOGIN_REDIRECT_URL = '/usuarios/dashboard/' 
 LOGOUT_REDIRECT_URL = '/accounts/login/'
-
 
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
@@ -178,3 +179,7 @@ LOGGING = {
 OTP_LOGIN_URL = '/usuarios/verify-2fa/'
 
 ACCOUNT_ADAPTER = 'usuarios.adapters.Custom2FAAccountAdapter'
+
+TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24
+
+LOGIN_URL = '/accounts/login/'
