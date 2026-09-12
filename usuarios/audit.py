@@ -64,3 +64,13 @@ def registrar_resultado_recuperacao_senha(usuario, sucesso, motivo=None):
         logger_seguranca.info(mensagem)
     else:
         logger_seguranca.warning(mensagem)
+
+def registrar_solicitacao_exclusao(usuario, campos_removidos, ip_address=None):
+
+    mensagem = (
+        f"Solicitação de exclusão de dados | Usuário: {usuario.email} | "
+        f"Campos removidos: {', '.join(campos_removidos) if campos_removidos else 'nenhum'} | "
+        f"IP: {ip_address or 'N/A'}"
+    )
+
+    logger_seguranca.info(mensagem)

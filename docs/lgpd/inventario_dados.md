@@ -46,8 +46,23 @@ Os dados coletados e suas finalidades foram definidos com o objetivo de aplicar 
 | Financeiro | contrato, valores, desconto | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão contratual | Financeiro/Fiscal, Gestão |
 | Financeiro | cobranças, vencimento, pagamento | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão de cobranças | Financeiro/Fiscal, Gestão |
 
+### O que é excluído de fato (RF 4.10)
+
+Como a maioria dos dados do funcionário está protegida por vínculos técnicos (`on_delete=PROTECT`) ou é necessária para o funcionamento do sistema enquanto o vínculo estiver ativo, a exclusão hoje é parcial. A tela deixa isso explícito para o titular antes da confirmação.
+
+| Dado | Pode ser excluído? | Motivo |
+| --- | --- | --- |
+| Telefone | Sim | Não possui vínculo com outros dados do sistema. |
+| Nome, CPF | Não | Necessários para identificação funcional e obrigações trabalhistas enquanto o vínculo estiver ativo. |
+| E-mail e senha da conta | Não | Necessários para o funcionamento do login; excluir inviabilizaria o acesso ao sistema. |
+| Cargo | Não | Controla as permissões de acesso ao sistema. |
+| Jornada de trabalho | Não | Dado administrativo vinculado ao funcionário enquanto estiver ativo. |
+
+Toda solicitação de exclusão é registrada no log de auditoria (`usuarios/audit.py`, função `registrar_solicitacao_exclusao`), mesmo quando nenhum dado é efetivamente removido.
+
 ## Histórico de alterações
 
 | Versão | Data | Alteração | Responsável |
 |---|---|---|---|
 | 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
+| 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados (RF 4.8, 4.9, 4.10) | Marcos Antônio Ferreira de Araújo |

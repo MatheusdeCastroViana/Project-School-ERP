@@ -1,0 +1,60 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Excluir Meus Dados" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card" style="max-width: 560px;">
+        <h1 class="auth-title">{% trans "Solicitação de Exclusão de Dados" %}</h1>
+
+        <p class="auth-text">
+            {% trans "Nem todo dado pessoal pode ser excluído imediatamente. Alguns são mantidos por obrigação legal ou porque o sistema depende deles para funcionar enquanto seu vínculo estiver ativo. Veja abaixo o que acontece ao confirmar." %}
+        </p>
+
+        {% if messages %}
+            <div class="auth-messages">
+                {% for message in messages %}
+                    <div class="auth-messages__item {% if message.tags %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-success);">
+            <span style="font-weight: 600; color: var(--auth-ink);">✓ {% trans "Será excluído agora" %}</span>
+            <p class="auth-text" style="text-align: left; font-size: 13px; margin-top: 8px;">
+                {% trans "Telefone para contato não possui vínculo com outros dados do sistema." %}
+            </p>
+        </div>
+
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <span style="font-weight: 600; color: var(--auth-ink);">⚠ {% trans "Não pode ser excluído agora" %}</span>
+            <table style="width: 100%; margin-top: 12px; font-size: 13px;">
+                {% for campo in campos_protegidos %}
+                <tr>
+                    <td style="padding: 8px 0; vertical-align: top; width: 40%; font-weight: 600;">{{ campo.dado }}</td>
+                    <td style="padding: 8px 0; color: var(--auth-muted);">{{ campo.motivo }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <form method="post" style="margin-top: 24px;">
+            {% csrf_token %}
+            <button type="submit" class="auth-btn auth-btn--primary" style="width: 100%;">
+                {% trans "Confirmar solicitação de exclusão" %}
+            </button>
+        </form>
+
+        <div class="auth-form__actions" style="margin-top: 24px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
+            <a href="{% url 'usuarios:dashboard' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Voltar ao Painel" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
