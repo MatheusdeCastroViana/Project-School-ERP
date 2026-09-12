@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -51,7 +52,12 @@ def consultar_dados(request):
 
 @login_required
 def exportar_dados(request):
-    return HttpResponse("Exportação de dados pessoais.")
+    dados = obter_dados_pessoais(request.user)
+    conteudo = json.dumps(dados, default=str, ensure_ascii=False, indent=2)
+
+    resposta = HttpResponse(conteudo, content_type='application/json')
+    resposta['Content-Disposition'] = 'attachment; filename="meus_dados.json"' # Baixa o arquivo ao invés de abrir uma página
+    return resposta
 
 
 @login_required
