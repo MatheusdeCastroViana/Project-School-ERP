@@ -34,3 +34,26 @@ class Funcionario(models.Model):
 
     def __str__(self):
         return self.nome
+
+class JornadaTrabalho(models.Model):
+    class DiaSemana(models.IntegerChoices):
+        SEGUNDA = 0, "Segunda-feira"
+        TERCA = 1, "Terça-feira"
+        QUARTA = 2, "Quarta-feira"
+        QUINTA = 3, "Quinta-feira"
+        SEXTA = 4, "Sexta-feira"
+        SABADO = 5, "Sábado"
+        DOMINGO = 6, "Domingo"
+
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE, related_name="jornadas")
+    dia_semana = models.IntegerField(choices=DiaSemana.choices)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+
+    class Meta:
+        unique_together = ("funcionario", "dia_semana")
+        verbose_name = "Jornada de Trabalho"
+        verbose_name_plural = "Jornadas de Trabalho"
+
+    def __str__(self):
+        return f"{self.funcionario.nome} - {self.get_dia_semana_display()}"
