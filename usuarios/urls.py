@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views_2fa
 from . import views_recuperacao
+from . import views_lgpd
 
 app_name = 'usuarios'
 
@@ -14,4 +15,8 @@ urlpatterns = [
     
     path('recuperar-senha/', views_recuperacao.solicitar_recuperacao, name='solicitar_recuperacao'),
     path('recuperar-senha/<str:token>/', views_recuperacao.confirmar_recuperacao, name='confirmar_recuperacao'),
+
+    path('meus-dados/', views_lgpd.consultar_dados, name='consultar_dados'),
+    path('meus-dados/exportar/', views_lgpd.exportar_dados, name='exportar_dados'),
+    path('meus-dados/exclusao/', views_lgpd.solicitar_exclusao, name='solicitar_exclusao'),
 ]
