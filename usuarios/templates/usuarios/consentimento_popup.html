@@ -4,6 +4,7 @@
 
 <div id="lgpd-consent-popup" class="lgpd-consent-popup">
     <div class="lgpd-consent-popup__container">
+        <!-- Conteúdo do popup -->
         <div class="lgpd-consent-popup__content">
             <p class="lgpd-consent-popup__title">
                 Respeitamos sua privacidade
@@ -11,10 +12,10 @@
             <p class="lgpd-consent-popup__text">
                 Utilizamos cookies essenciais para o funcionamento do sistema e tratamos 
                 seus dados pessoais em conformidade com a 
-                <a href="{% url 'lgpd:politica_privacidade' %}" target="_blank">
+                <a href="{% url 'usuarios:politica_privacidade' %}" target="_blank">
                     Política de Privacidade
                 </a> e 
-                <a href="{% url 'lgpd:termos_uso' %}" target="_blank">
+                <a href="{% url 'usuarios:termos_uso' %}" target="_blank">
                     Termos de Uso
                 </a>.
             </p>
@@ -34,5 +35,6 @@
         </div>
     </div>
 </div>
+
 
 <script src="{% static 'auth/js/lgpd_consent.js' %}"></script>

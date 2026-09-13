@@ -2,10 +2,14 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
-from .audit import registrar_solicitacao_exclusao
+from .audit import (
+    registrar_consentimento,
+    registrar_solicitacao_exclusao,
+)
 from .models_2fa import Configuracao2FA
 
 CAMPOS_PROTEGIDOS = [
@@ -63,9 +67,7 @@ def obter_dados_pessoais(usuario):
             }
             for jornada in funcionario.jornadas.all().order_by('dia_semana')
         ]
-
     return dados
-
 
 @login_required
 def consultar_dados(request):
@@ -85,7 +87,6 @@ def exportar_dados(request):
 
 @login_required
 def solicitar_exclusao(request):
-    # Só exclue realmente o telefone por enquanto
     if request.method == 'POST':
         campos_removidos = []
         funcionario = request.user.funcionario
@@ -116,3 +117,45 @@ def solicitar_exclusao(request):
 
     context = {'campos_protegidos': CAMPOS_PROTEGIDOS}
     return render(request, 'usuarios/solicitar_exclusao.html', context)
+
+
+@require_POST
+@login_required
+def registrar_consentimento_view(request):
+    try:
+        data = json.loads(request.body)
+        tipo = data.get('tipo')
+        versao = data.get('versao')
+        aceitou = data.get('aceitou', False)
+        
+        if not tipo or not versao:
+            return JsonResponse({'error': 'Dados inválidos'}, status=400)
+        
+        # Registra no log de auditoria
+        registrar_consentimento(
+            usuario=request.user,
+            tipo=tipo,
+            versao=versao,
+            aceitou=aceitou,
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'tipo': tipo,
+            'versao': versao,
+            'aceitou': aceitou
+        })
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def politica_privacidade(request):
+    return render(request, 'usuarios/politica_privacidade.html')
+
+
+def termos_uso(request):
+    return render(request, 'usuarios/termos_uso.html')
