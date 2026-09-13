@@ -1,0 +1,38 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'auth/css/lgpd.css' %}">
+
+<div id="lgpd-consent-popup" class="lgpd-consent-popup">
+    <div class="lgpd-consent-popup__container">
+        <div class="lgpd-consent-popup__content">
+            <p class="lgpd-consent-popup__title">
+                Respeitamos sua privacidade
+            </p>
+            <p class="lgpd-consent-popup__text">
+                Utilizamos cookies essenciais para o funcionamento do sistema e tratamos 
+                seus dados pessoais em conformidade com a 
+                <a href="{% url 'lgpd:politica_privacidade' %}" target="_blank">
+                    Política de Privacidade
+                </a> e 
+                <a href="{% url 'lgpd:termos_uso' %}" target="_blank">
+                    Termos de Uso
+                </a>.
+            </p>
+            <p class="lgpd-consent-popup__footer">
+                Ao continuar navegando, você consente com o tratamento de dados para:
+                autenticação, segurança, auditoria e melhoria da experiência.
+            </p>
+        </div>
+        
+        <div class="lgpd-consent-popup__actions">
+            <button id="lgpd-btn-aceitar" class="auth-btn auth-btn--primary">
+                Aceitar
+            </button>
+            <button id="lgpd-btn-recusar" class="auth-btn auth-btn--outline">
+                Recusar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'auth/js/lgpd_consent.js' %}"></script>
