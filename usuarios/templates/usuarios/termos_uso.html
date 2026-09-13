@@ -1,0 +1,102 @@
+{% extends "account/base_entrance.html" %}
+{% load static %}
+
+{% block head_title %}Termos de Uso{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'auth/css/lgpd.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card lgpd-page">
+        <div class="lgpd-page__header">
+            <h1 class="lgpd-page__title">Termos de Uso</h1>
+            <p class="lgpd-page__subtitle">
+                Versão 1.0 | Última atualização: 13 de setembro de 2026
+            </p>
+        </div>
+
+        <div class="lgpd-page__content">
+            <h2>1. Aceitação dos Termos</h2>
+            <p>
+                Ao acessar e utilizar o ERP Escola Profissionalizante ("Sistema"), você 
+                concorda com os presentes Termos de Uso. Caso não concorde com qualquer 
+                disposição, não utilize o Sistema.
+            </p>
+
+            <h2>2. Descrição do Serviço</h2>
+            <p>
+                O Sistema é uma plataforma web para gestão integrada de escolas 
+                profissionalizantes, incluindo módulos de autenticação, cadastro de alunos, 
+                funcionários, cursos, turmas, notas, financeiro e relatórios.
+            </p>
+
+            <h2>3. Cadastro e Conta</h2>
+            <ul>
+                <li>Você é responsável por manter a confidencialidade de suas credenciais</li>
+                <li>Todas as atividades realizadas com sua conta são de sua responsabilidade</li>
+                <li>Você deve notificar imediatamente qualquer uso não autorizado</li>
+                <li>O Sistema reserva-se o direito de suspender contas que violem estes termos</li>
+            </ul>
+
+            <h2>4. Uso Aceitável</h2>
+            <p>Você concorda em não:</p>
+            <ul>
+                <li>Violar leis ou regulamentos aplicáveis</li>
+                <li>Tentar obter acesso não autorizado ao Sistema</li>
+                <li>Compartilhar credenciais com terceiros</li>
+                <li>Utilizar o Sistema para fins ilícitos ou não autorizados</li>
+                <li>Interferir no funcionamento do Sistema</li>
+            </ul>
+
+            <h2>5. Propriedade Intelectual</h2>
+            <p>
+                O Sistema e todo seu conteúdo (software, design, textos, imagens) são de 
+                propriedade da escola ou de seus licenciadores e estão protegidos por leis 
+                de propriedade intelectual.
+            </p>
+
+            <h2>6. Privacidade</h2>
+            <p>
+                O tratamento de dados pessoais está sujeito à nossa 
+                <a href="{% url 'usuarios:politica_privacidade' %}">Política de Privacidade</a>, 
+                que é parte integrante destes Termos de Uso.
+            </p>
+
+            <h2>7. Disponibilidade</h2>
+            <p>
+                O Sistema é fornecido "como está" e "conforme disponível". Não garantimos 
+                que o serviço será ininterrupto ou livre de erros.
+            </p>
+
+            <h2>8. Limitação de Responsabilidade</h2>
+            <p>
+                O Sistema não será responsável por danos indiretos, incidentais, especiais 
+                ou consequenciais decorrentes do uso ou impossibilidade de uso do serviço.
+            </p>
+
+            <h2>9. Modificações</h2>
+            <p>
+                Reservamo-nos o direito de modificar estes Termos de Uso a qualquer momento. 
+                Alterações significativas serão comunicadas aos usuários.
+            </p>
+
+            <h2>10. Lei Aplicável</h2>
+            <p>
+                Estes Termos de Uso são regidos pelas leis da República Federativa do Brasil. 
+                Fica eleito o foro da comarca da sede da escola para dirimir quaisquer questões.
+            </p>
+        </div>
+
+        <div class="lgpd-page__footer">
+            <p class="lgpd-page__footer-text">
+                Versão 1.0 | Publicada em 13 de setembro de 2026
+            </p>
+            <a href="{% url 'account_login' %}" class="auth-btn auth-btn--outline">
+                Voltar ao Login
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -57,6 +57,28 @@
             </div>
         </div>
 
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <div style="margin-bottom: 12px;">
+                <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Meus Dados (LGPD)" %}</span>
+            </div>
+
+            <p class="auth-text" style="text-align: left; font-size: 13px; margin-bottom: 16px;">
+                {% trans "Consulte, exporte ou solicite a exclusão dos seus dados pessoais." %}
+            </p>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="{% url 'usuarios:consultar_dados' %}" class="auth-btn auth-btn--outline" style="flex: 1; text-align: center;">
+                    {% trans "Consultar" %}
+                </a>
+                <a href="{% url 'usuarios:exportar_dados' %}" class="auth-btn auth-btn--outline" style="flex: 1; text-align: center;">
+                    {% trans "Exportar" %}
+                </a>
+                <a href="{% url 'usuarios:solicitar_exclusao' %}" class="auth-btn auth-btn--outline" style="flex: 1; text-align: center;">
+                    {% trans "Excluir" %}
+                </a>
+            </div>
+        </div>
+
         <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
             <form action="{% url 'usuarios:logout' %}" method="post" style="margin: 0;">
                 {% csrf_token %}

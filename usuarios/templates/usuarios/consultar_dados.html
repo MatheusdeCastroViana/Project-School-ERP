@@ -1,0 +1,86 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+
+{% block head_title %}
+    {% trans "Meus Dados" %}
+{% endblock head_title %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card" style="max-width: 560px;">
+        <h1 class="auth-title">{% trans "Meus Dados Pessoais" %}</h1>
+
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Conta" %}</span>
+            <table style="width: 100%; margin-top: 12px; font-size: 14px;">
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "E-mail" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.conta.email }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Conta criada em" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.conta.data_criacao }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "2FA ativo" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">
+                        {% if dados.conta.dois_fatores_ativo %}✓ {% trans "Sim" %}{% else %}⚠ {% trans "Não" %}{% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        {% if dados.funcionario %}
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Dados de Funcionário" %}</span>
+            <table style="width: 100%; margin-top: 12px; font-size: 14px;">
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Nome" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.nome }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "CPF" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.cpf }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Telefone" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.telefone|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Cargo" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.cargo|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Setor" %}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.setor|default:"—" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Jornada de Trabalho" %}</span>
+            <table style="width: 100%; margin-top: 12px; font-size: 14px;">
+                {% for jornada in dados.jornadas %}
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{{ jornada.dia_semana }}</td>
+                    <td style="padding: 4px 0; text-align: right;">{{ jornada.hora_inicio }} — {{ jornada.hora_fim }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Nenhuma jornada cadastrada." %}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+        <p class="auth-text">{% trans "Não há dados de funcionário vinculados a esta conta." %}</p>
+        {% endif %}
+
+        <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
+            <a href="{% url 'usuarios:dashboard' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Voltar ao Painel" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock content %}

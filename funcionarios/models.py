@@ -5,7 +5,7 @@ class Setor(models.Model):
     nome = models.CharField(max_length=100, unique=True)
     descricao = models.CharField(max_length=150, blank=True) # Blank permite criar setor sem descrição
 
-    # Trocar o nome do plural de Setor pra Setores no admin (fica escrito Setors)
+    # Trocar o nome do plural de Setor pra Setores no admin (ficava escrito Setors)
     class Meta:
         verbose_name = "Setor"
         verbose_name_plural = "Setores"
@@ -24,11 +24,36 @@ class Cargo(models.Model):
     def __str__(self):
             return self.nome
 
-# Classe mínima. Essa classe ainda terá vários outros atributos com referências à outras tabelas
+# Talvez adicionar data de admissão mais pra frente
 class Funcionario(models.Model):
     nome = models.CharField(max_length=150)
     cpf = models.CharField(max_length=14, unique=True)
     ativo = models.BooleanField(default=True)
+    telefone = models.CharField(max_length=11, blank=True, default="")
+    cargo = models.ForeignKey(Cargo, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
         return self.nome
+
+class JornadaTrabalho(models.Model):
+    class DiaSemana(models.IntegerChoices):
+        SEGUNDA = 0, "Segunda-feira"
+        TERCA = 1, "Terça-feira"
+        QUARTA = 2, "Quarta-feira"
+        QUINTA = 3, "Quinta-feira"
+        SEXTA = 4, "Sexta-feira"
+        SABADO = 5, "Sábado"
+        DOMINGO = 6, "Domingo"
+
+    funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE, related_name="jornadas")
+    dia_semana = models.IntegerField(choices=DiaSemana.choices)
+    hora_inicio = models.TimeField()
+    hora_fim = models.TimeField()
+
+    class Meta:
+        unique_together = ("funcionario", "dia_semana")
+        verbose_name = "Jornada de Trabalho"
+        verbose_name_plural = "Jornadas de Trabalho"
+
+    def __str__(self):
+        return f"{self.funcionario.nome} - {self.get_dia_semana_display()}"

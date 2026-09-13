@@ -1,0 +1,124 @@
+{% extends "account/base_entrance.html" %}
+{% load static %}
+
+{% block head_title %}Política de Privacidade{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'auth/css/lgpd.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card lgpd-page">
+        <div class="lgpd-page__header">
+            <h1 class="lgpd-page__title">Política de Privacidade</h1>
+            <p class="lgpd-page__subtitle">
+                Versão 1.0 | Última atualização: 13 de setembro de 2026
+            </p>
+        </div>
+
+        <div class="lgpd-page__content">
+            <h2>1. Introdução</h2>
+            <p>
+                O ERP Escola Profissionalizante ("Sistema") está comprometido com a proteção 
+                da privacidade e dos dados pessoais de seus usuários, em conformidade com a 
+                Lei Geral de Proteção de Dados (Lei nº 13.709/2018 - LGPD).
+            </p>
+            <p>
+                Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e 
+                protegemos os dados pessoais dos usuários do Sistema.
+            </p>
+
+            <h2>2. Dados Coletados</h2>
+            <p>Coletamos os seguintes dados pessoais:</p>
+            <ul>
+                <li><strong>Dados de identificação:</strong> nome, e-mail, CPF, data de nascimento</li>
+                <li><strong>Dados de contato:</strong> telefone, endereço</li>
+                <li><strong>Dados de autenticação:</strong> e-mail, senha (hash), 2FA</li>
+                <li><strong>Dados de acesso:</strong> IP, user-agent, logs de autenticação</li>
+            </ul>
+
+            <h2>3. Finalidade do Tratamento</h2>
+            <p>Os dados pessoais são tratados para as seguintes finalidades:</p>
+            <ul>
+                <li>Autenticação e controle de acesso ao Sistema</li>
+                <li>Documentação</li>
+                <li>Gestão de usuários e permissões</li>
+                <li>Comunicação institucional</li>
+                <li>Segurança e auditoria</li>
+                <li>Cumprimento de obrigações legais</li>
+            </ul>
+
+            <h2>4. Base Legal</h2>
+            <p>O tratamento de dados pessoais baseia-se em:</p>
+            <ul>
+                <li>Execução de contrato (para funcionários e alunos)</li>
+                <li>Cumprimento de obrigação legal</li>
+                <li>Legítimo interesse (segurança e auditoria)</li>
+                <li>Consentimento (quando aplicável)</li>
+            </ul>
+
+            <h2>5. Compartilhamento de Dados</h2>
+            <p>
+                Os dados pessoais não são compartilhados com terceiros, exceto quando 
+                necessário para cumprimento de obrigações legais ou com prestadores de 
+                serviços que atuam em nome do Sistema (operadores de dados).
+            </p>
+
+            <h2>6. Retenção de Dados</h2>
+            <p>Os dados pessoais são retidos pelo tempo necessário para:</p>
+            <ul>
+                <li>Cumprir as finalidades para as quais foram coletados</li>
+                <li>Cumprir obrigações legais</li>
+                <li>Exercer direitos em processos judiciais ou administrativos</li>
+            </ul>
+
+            <h2>7. Direitos do Titular</h2>
+            <p>Você tem direito a:</p>
+            <ul>
+                <li>Confirmar a existência de tratamento de dados</li>
+                <li>Acessar seus dados pessoais</li>
+                <li>Corrigir dados incompletos, inexatos ou desatualizados</li>
+                <li>Solicitar a anonimização, bloqueio ou eliminação de dados desnecessários</li>
+                <li>Portabilidade dos dados</li>
+                <li>Revogar o consentimento</li>
+            </ul>
+
+            <h2>8. Segurança</h2>
+            <p>
+                Adotamos medidas técnicas e organizacionais para proteger os dados pessoais 
+                contra acesso não autorizado, destruição, perda, alteração ou comunicação 
+                indevida, incluindo:
+            </p>
+            <ul>
+                <li>Criptografia de senhas (Argon2)</li>
+                <li>Autenticação de dois fatores (2FA)</li>
+                <li>Logs de auditoria</li>
+                <li>Controle de acesso baseado em cargos</li>
+            </ul>
+
+            <h2>9. Cookies</h2>
+            <p>
+                Utilizamos cookies essenciais para o funcionamento do Sistema, como 
+                autenticação e segurança. Cookies de análise ou marketing só serão 
+                utilizados com seu consentimento explícito.
+            </p>
+
+            <h2>10. Contato</h2>
+            <p>
+                Para exercer seus direitos ou tirar dúvidas sobre esta Política de Privacidade, 
+                entre em contato com o encarregado de dados (DPO) através do e-mail que será criado para este fim.
+            </p>
+        </div>
+
+        <div class="lgpd-page__footer">
+            <p class="lgpd-page__footer-text">
+                Versão 1.0 | Publicada em 13 de setembro de 2026
+            </p>
+            <a href="{% url 'account_login' %}" class="auth-btn auth-btn--outline">
+                Voltar ao Login
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

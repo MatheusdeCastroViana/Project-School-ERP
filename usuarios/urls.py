@@ -1,10 +1,12 @@
 from django.urls import path
 from . import views_2fa
 from . import views_recuperacao
+from . import views_lgpd
 
 app_name = 'usuarios'
 
 urlpatterns = [
+
     path('dashboard/', views_2fa.dashboard, name='dashboard'),
     path('logout/', views_2fa.logout_usuario, name='logout'),
     
@@ -14,4 +16,11 @@ urlpatterns = [
     
     path('recuperar-senha/', views_recuperacao.solicitar_recuperacao, name='solicitar_recuperacao'),
     path('recuperar-senha/<str:token>/', views_recuperacao.confirmar_recuperacao, name='confirmar_recuperacao'),
+
+    path('meus-dados/', views_lgpd.consultar_dados, name='consultar_dados'),
+    path('meus-dados/exportar/', views_lgpd.exportar_dados, name='exportar_dados'),
+    path('meus-dados/exclusao/', views_lgpd.solicitar_exclusao, name='solicitar_exclusao'),
+    path('api/consentimento/', views_lgpd.registrar_consentimento_view, name='registrar_consentimento'),
+    path('politica-privacidade/', views_lgpd.politica_privacidade, name='politica_privacidade'),
+    path('termos-uso/', views_lgpd.termos_uso, name='termos_uso'),
 ]
