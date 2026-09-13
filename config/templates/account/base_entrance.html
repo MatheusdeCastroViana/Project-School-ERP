@@ -20,7 +20,9 @@
     {% block content %}{% endblock content %}
     
     <script src="{% static 'auth/js/auth.js' %}"></script>
-    
+ 
+    {% include "usuarios/consentimento_popup.html" %}
+ 
     {% block extra_body %}{% endblock extra_body %}
 </body>
 </html>
