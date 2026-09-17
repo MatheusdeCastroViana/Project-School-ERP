@@ -57,6 +57,10 @@
             </div>
         </div>
 
+        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
+            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Atividade da conta" %}</span>
+        </div>
+
         <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
             <form action="{% url 'usuarios:logout' %}" method="post" style="margin: 0;">
                 {% csrf_token %}
