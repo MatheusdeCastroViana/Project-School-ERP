@@ -6,6 +6,10 @@
     {% trans "Painel do Usuário" %}
 {% endblock head_title %}
 
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'auth/css/atividade_conta.css' %}">
+{% endblock extra_head %}
+
 {% block content %}
 <div class="auth-shell">
     <div class="auth-card" style="max-width: 500px;">
@@ -57,8 +61,41 @@
             </div>
         </div>
 
-        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
-            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Atividade da conta" %}</span>
+        <div class="atividade-conta">
+            <details class="atividade-conta__detalhes">
+                <summary class="atividade-conta__resumo">
+                    <span class="atividade-conta__titulo">{% trans "Atividade da conta" %}</span>
+                    <span class="atividade-conta__selo">{% trans "exemplo" %}</span>
+                </summary>
+
+                <ul class="atividade-conta__lista">
+                    <li class="atividade-conta__item">
+                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
+                        <span class="atividade-conta__texto">{% trans "Login realizado" %}</span>
+                        <span class="atividade-conta__data">20/09/2026 14:32</span>
+                    </li>
+                    <li class="atividade-conta__item">
+                        <span class="atividade-conta__icone atividade-conta__icone--falha" aria-hidden="true">✕</span>
+                        <span class="atividade-conta__texto">{% trans "Tentativa de login com senha incorreta" %}</span>
+                        <span class="atividade-conta__data">20/09/2026 14:29</span>
+                    </li>
+                    <li class="atividade-conta__item">
+                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
+                        <span class="atividade-conta__texto">{% trans "2FA ativado" %}</span>
+                        <span class="atividade-conta__data">19/09/2026 21:05</span>
+                    </li>
+                    <li class="atividade-conta__item">
+                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
+                        <span class="atividade-conta__texto">{% trans "Senha redefinida por recuperação" %}</span>
+                        <span class="atividade-conta__data">18/09/2026 09:47</span>
+                    </li>
+                    <li class="atividade-conta__item">
+                        <span class="atividade-conta__icone atividade-conta__icone--falha" aria-hidden="true">✕</span>
+                        <span class="atividade-conta__texto">{% trans "Código 2FA inválido" %}</span>
+                        <span class="atividade-conta__data">17/09/2026 18:12</span>
+                    </li>
+                </ul>
+            </details>
         </div>
 
         <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
