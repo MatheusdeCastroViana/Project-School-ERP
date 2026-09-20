@@ -1,4 +1,6 @@
 import logging
+from django.utils import timezone
+from .models import LogAuditoria
 
 logger_seguranca = logging.getLogger('auditoria_seguranca')
 
@@ -91,3 +93,22 @@ def registrar_consentimento(usuario, tipo, versao, aceitou, ip_address=None):
         logger_seguranca.info(mensagem)
     else:
         logger_seguranca.warning(mensagem)
+
+# Função para registrar eventos de autenticação no modelo LogAuditoria:
+def registrar_evento_autenticacao(usuario, evento, sucesso, ip_address=None):
+    tipo_map = {
+        'login': 'login',
+        'logout': 'logout',
+        'login_falha_senha': 'login_falha',
+        'login_bloqueado': 'login_bloqueado',
+    }
+    
+    tipo_evento = tipo_map.get(evento, 'outro')
+    
+    LogAuditoria.objects.create(
+        usuario=usuario if usuario and hasattr(usuario, 'id') else None,
+        tipo_evento=tipo_evento,
+        ip_address=ip_address,
+        sucesso=sucesso,
+        mensagem=f"Autenticação - Evento: {evento} | Sucesso: {sucesso}"
+    )
