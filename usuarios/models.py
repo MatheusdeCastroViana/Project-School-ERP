@@ -60,3 +60,51 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class LogAuditoria(models.Model):
+    TIPO_EVENTO = [
+        ('login', 'Login'),
+        ('logout', 'Logout'),
+        ('login_falha', 'Falha de Login'),
+        ('login_bloqueado', 'Login Bloqueado'),
+        ('2fa_ativacao', 'Ativação 2FA'),
+        ('2fa_verificacao_sucesso', 'Verificação 2FA - Sucesso'),
+        ('2fa_verificacao_falha', 'Verificação 2FA - Falha'),
+        ('2fa_desativacao', 'Desativação 2FA'),
+        ('recuperacao_senha_solicitacao', 'Recuperação de Senha - Solicitação'),
+        ('recuperacao_senha_sucesso', 'Recuperação de Senha - Sucesso'),
+        ('recuperacao_senha_falha', 'Recuperação de Senha - Falha'),
+        ('exclusao_dados', 'Exclusão de Dados'),
+        ('consentimento_lgpd', 'Consentimento LGPD'),
+        ('outro', 'Outro'),
+    ]
+    
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='logs_auditoria',
+        verbose_name='Usuário'
+    )
+    tipo_evento = models.CharField(max_length=50, choices=TIPO_EVENTO, db_index=True)
+    data_hora = models.DateTimeField(auto_now_add=True, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    sucesso = models.BooleanField(default=True)
+    detalhes = models.JSONField(null=True, blank=True, help_text='Detalhes adicionais em formato JSON')
+    mensagem = models.TextField(help_text='Mensagem descritiva do evento')
+    
+    class Meta:
+        ordering = ['-data_hora']
+        verbose_name = 'Log de Auditoria'
+        verbose_name_plural = 'Logs de Auditoria'
+        indexes = [
+            models.Index(fields=['-data_hora']),
+            models.Index(fields=['usuario', '-data_hora']),
+            models.Index(fields=['tipo_evento', '-data_hora']),
+        ]
+    
+    def __str__(self):
+        usuario_str = self.usuario.email if self.usuario else 'Sistema'
+        return f"{self.data_hora.strftime('%d/%m/%Y %H:%M')} - {usuario_str} - {self.get_tipo_evento_display()}"
