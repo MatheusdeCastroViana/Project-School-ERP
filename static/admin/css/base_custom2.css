@@ -1,0 +1,324 @@
+:root {
+    --erp-bg: #FAFAF9;
+    --erp-surface: #FFFFFF;
+    --erp-ink: #1C1917;
+    --erp-muted: #78716C;
+    --erp-border: #E7E5E4;
+    --erp-accent: #F4611E;
+    --erp-accent-deep: #D6520D;
+    --erp-accent-soft: #FFF1E9;
+    --erp-success: #15803D;
+    --erp-success-soft: #F0FDF4;
+    --erp-danger: #DC2626;
+    --erp-danger-soft: #FEF2F2;
+}
+
+body {
+    background: var(--erp-bg) !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    color: var(--erp-ink) !important;
+}
+
+#header {
+    background: var(--erp-surface) !important;
+    color: var(--erp-ink) !important;
+    border-bottom: 3px solid var(--erp-accent) !important;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+    color: var(--erp-ink) !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-weight: 700 !important;
+}
+
+#user-tools, #user-tools a:link, #user-tools a:visited {
+    color: var(--erp-ink) !important;
+}
+
+#user-tools a:hover {
+    color: var(--erp-accent) !important;
+}
+
+.breadcrumbs {
+    background: var(--erp-surface) !important;
+    color: var(--erp-muted) !important;
+    border-bottom: 1px solid var(--erp-border) !important;
+}
+
+.breadcrumbs a {
+    color: var(--erp-accent) !important;
+}
+
+#content {
+    background: var(--erp-surface) !important;
+}
+
+.module {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+}
+
+.module h2, .module caption, .module .help {
+    background: var(--erp-bg) !important;
+    color: var(--erp-ink) !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+table {
+    border-collapse: collapse !important;
+}
+
+table thead th {
+    background: var(--erp-bg) !important;
+    color: var(--erp-muted) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 11px !important;
+    letter-spacing: 0.06em !important;
+    border-bottom: 2px solid var(--erp-border) !important;
+}
+
+table tbody td {
+    border-bottom: 1px solid var(--erp-border) !important;
+    padding: 12px 16px !important;
+}
+
+table tbody tr:hover td {
+    background: var(--erp-accent-soft) !important;
+}
+
+table tbody th a:link, table tbody th a:visited {
+    color: var(--erp-accent) !important;
+    font-weight: 600 !important;
+}
+
+#changelist-filter {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04) !important;
+}
+
+#changelist-filter h2 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    color: var(--erp-ink) !important;
+    border-bottom: 2px solid var(--erp-accent) !important;
+    padding-bottom: 8px !important;
+}
+
+#changelist-filter h3 {
+    color: var(--erp-ink) !important;
+    font-weight: 600 !important;
+}
+
+#changelist-filter a {
+    color: var(--erp-muted) !important;
+}
+
+#changelist-filter a:hover, #changelist-filter .selected {
+    color: var(--erp-accent) !important;
+    font-weight: 600 !important;
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, .default {
+    background: var(--erp-accent) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, .default:hover {
+    background: var(--erp-accent-deep) !important;
+}
+
+.button:disabled, input[type=submit]:disabled {
+    background: var(--erp-muted) !important;
+    cursor: not-allowed !important;
+}
+
+input[type=text], input[type=password], input[type=email], 
+input[type=url], input[type=number], input[type=tel],
+textarea, select {
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    background: var(--erp-surface) !important;
+    color: var(--erp-ink) !important;
+}
+
+input[type=text]:focus, input[type=password]:focus, 
+input[type=email]:focus, textarea:focus, select:focus {
+    border-color: var(--erp-accent) !important;
+    box-shadow: 0 0 0 3px var(--erp-accent-soft) !important;
+    outline: none !important;
+}
+
+.submit-row {
+    background: var(--erp-bg) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+}
+
+.submit-row a.deletelink {
+    background: var(--erp-danger) !important;
+    color: #FFFFFF !important;
+}
+
+.submit-row a.deletelink:hover {
+    background: #B91C1C !important;
+}
+
+.messagelist li {
+    background: var(--erp-surface) !important;
+    border-left: 4px solid var(--erp-accent) !important;
+    border-radius: 8px !important;
+    padding: 12px 16px !important;
+}
+
+.messagelist li.success {
+    border-left-color: var(--erp-success) !important;
+    background: var(--erp-success-soft) !important;
+}
+
+.messagelist li.error {
+    border-left-color: var(--erp-danger) !important;
+    background: var(--erp-danger-soft) !important;
+}
+
+.messagelist li.warning {
+    border-left-color: var(--erp-accent) !important;
+    background: var(--erp-accent-soft) !important;
+}
+
+.dashboard #content {
+    background: var(--erp-bg) !important;
+}
+
+.dashboard .module {
+    margin-bottom: 24px !important;
+}
+
+.dashboard h2 {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 16px !important;
+}
+
+.dashboard .module table {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 0 0 12px 12px !important;
+}
+
+#changelist-filter {
+    background: var(--erp-surface) !important;
+}
+
+.pagination {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 8px !important;
+}
+
+.pagination a, .pagination span {
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+}
+
+.pagination a:hover {
+    background: var(--erp-accent-soft) !important;
+    color: var(--erp-accent) !important;
+}
+
+.object-tools {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 8px !important;
+}
+
+.object-tools a:link, .object-tools a:visited {
+    background: var(--erp-accent) !important;
+    color: #FFFFFF !important;
+    border-radius: 6px !important;
+}
+
+.object-tools a:hover {
+    background: var(--erp-accent-deep) !important;
+}
+
+fieldset.collapsed h3 {
+    background: var(--erp-bg) !important;
+    cursor: pointer !important;
+}
+
+fieldset h2 {
+    background: var(--erp-surface) !important;
+    color: var(--erp-ink) !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.help {
+    color: var(--erp-muted) !important;
+    font-size: 13px !important;
+}
+
+.required {
+    color: var(--erp-accent) !important;
+}
+
+#searchbar {
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+}
+
+.actions {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+}
+
+.actions label {
+    color: var(--erp-ink) !important;
+}
+
+/* Date hierarchy */
+.date-backlink {
+    color: var(--erp-accent) !important;
+}
+
+/* Login page */
+.login #container {
+    background: var(--erp-surface) !important;
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 32px rgba(28, 25, 23, 0.06) !important;
+}
+
+.login #header {
+    background: var(--erp-surface) !important;
+    border-bottom: 3px solid var(--erp-accent) !important;
+}
+
+.login #branding h1 {
+    color: var(--erp-ink) !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.login .submit-row input {
+    width: 100% !important;
+    padding: 12px !important;
+}

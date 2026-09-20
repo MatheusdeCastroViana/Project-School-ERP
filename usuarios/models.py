@@ -1,12 +1,7 @@
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
-
-"""
-O AbstractUser padrão do Django cria seta o username como a informação principal para o login, mas no
-nosso caso o login será feito com o email e senha, que é mais comum em sistemas escolares.
-Então é preciso criar essa outra classe UsuarioManager para criar os usuarios de forma mais customizada.
-"""
+from django.conf import settings
 
 class UsuarioManager(BaseUserManager):
 
@@ -54,7 +49,7 @@ class Usuario(AbstractUser):
     bloqueado_ate = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []  # Campos extras exigidos no createsuperuser, além de email/password
+    REQUIRED_FIELDS = []  
 
     objects = UsuarioManager()
 
