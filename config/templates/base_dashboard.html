@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>{% block titulo_pagina %}ERP Escolar{% endblock titulo_pagina %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
+
+    {% block css_extra %}{% endblock css_extra %}
+</head>
+<body>
+    <div class="dash-shell">
+
+        <!-- ===================== Topbar ===================== -->
+        <header class="dash-topbar">
+            <div style="display: flex; align-items: center;">
+                <!-- Botão hambúrguer, só aparece em telas pequenas (ver dashboard.css) -->
+                <button type="button" class="dash-menu-toggle" data-dash-menu-toggle aria-label="Abrir menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="dash-brand">
+                    <span class="dash-brand__badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10 12 5 2 10l10 5 10-5Z"></path>
+                            <path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"></path>
+                            <path d="M22 10v6"></path>
+                        </svg>
+                    </span>
+                    <span>ERP Escolar</span>
+                </div>
+            </div>
+
+            <!-- ===================== Perfil / dropdown ===================== -->
+            <div class="dash-profile">
+                <button
+                    type="button"
+                    class="dash-profile__trigger"
+                    data-dash-profile-trigger
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-label="Abrir menu do perfil"
+                >
+                    {# Iniciais como avatar: usa o nome do funcionário quando existe, #}
+                    {# ou o e-mail para usuários sem Funcionario vinculado (ex: superuser) #}
+                    {% if request.user.funcionario %}
+                        {{ request.user.funcionario.nome|slice:":1"|upper }}
+                    {% else %}
+                        {{ request.user.email|slice:":1"|upper }}
+                    {% endif %}
+                </button>
+
+                <div class="dash-profile__panel" data-dash-profile-panel role="menu">
+                    <div class="dash-profile__header">
+                        <div class="dash-profile__avatar">
+                            {% if request.user.funcionario %}
+                                {{ request.user.funcionario.nome|slice:":1"|upper }}
+                            {% else %}
+                                {{ request.user.email|slice:":1"|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="dash-profile__nome">
+                                {% if request.user.funcionario %}
+                                    {{ request.user.funcionario.nome }}
+                                {% else %}
+                                    {{ request.user.email }}
+                                {% endif %}
+                            </div>
+                            <div class="dash-profile__cargo">
+                                {% if request.user.funcionario.cargo %}
+                                    {{ request.user.funcionario.cargo.nome }}
+                                {% elif request.user.is_superuser %}
+                                    Superusuário
+                                {% else %}
+                                    Sem cargo definido
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-profile__divider"></div>
+
+                    <a href="{% url 'usuarios:dashboard' %}" class="dash-profile__link" role="menuitem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Conta
+                    </a>
+
+                    <a href="{% url 'usuarios:consultar_dados' %}" class="dash-profile__link" role="menuitem">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        Meus dados
+                    </a>
+
+                    <div class="dash-profile__divider"></div>
+
+                    <form action="{% url 'usuarios:logout' %}" method="post" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="dash-profile__link dash-profile__link--danger" role="menuitem">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Sair
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </header>
+
+        <div class="dash-body">
+
+            <!-- ===================== Sidebar ===================== -->
+            <aside class="dash-sidebar" data-dash-sidebar>
+                <nav class="dash-nav">
+                    {% for item in menu_lateral %}
+                        {% if item.permitido %}
+                            <a
+                                href="{{ item.url }}"
+                                class="dash-nav__item{% if setor_ativo == item.id %} is-active{% endif %}"
+                            >
+                                {% if item.icone == "administrador" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                    </svg>
+                                {% elif item.icone == "pedagogico" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                {% elif item.icone == "financeiro" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                {% elif item.icone == "gestao" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                        <polyline points="17 6 23 6 23 12"></polyline>
+                                    </svg>
+                                {% endif %}
+                                {{ item.rotulo }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                </nav>
+            </aside>
+
+            <!-- ===================== Conteúdo central ===================== -->
+            <!-- As páginas de cada setor sobrescrevem este bloco. -->
+            <main class="dash-content">
+                {% block conteudo %}{% endblock conteudo %}
+            </main>
+
+        </div>
+    </div>
+
+    <script src="{% static 'dashboard/js/dashboard.js' %}"></script>
+
+    {% block js_extra %}{% endblock js_extra %}
+</body>
+</html>
