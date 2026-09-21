@@ -2,6 +2,7 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 
 class UsuarioManager(BaseUserManager):
 
@@ -56,6 +57,14 @@ class Usuario(AbstractUser):
     def __str__(self):
         return self.email
 
+class LogAuditoriaQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        raise PermissionDenied('Logs de auditoria são imutáveis e não podem ser alterados.')
+
+    def delete(self):
+        raise PermissionDenied('Logs de auditoria são imutáveis e não podem ser excluídos.')
+
+
 class LogAuditoria(models.Model):
     TIPO_EVENTO = [
         ('login', 'Login'),
@@ -89,7 +98,17 @@ class LogAuditoria(models.Model):
     sucesso = models.BooleanField(default=True)
     detalhes = models.JSONField(null=True, blank=True, help_text='Detalhes adicionais em formato JSON')
     mensagem = models.TextField(help_text='Mensagem descritiva do evento')
-    
+
+    objects = LogAuditoriaQuerySet.as_manager()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise PermissionDenied('Logs de auditoria são imutáveis e não podem ser alterados.')
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionDenied('Logs de auditoria são imutáveis e não podem ser excluídos.')
+
     class Meta:
         ordering = ['-data_hora']
         verbose_name = 'Log de Auditoria'
