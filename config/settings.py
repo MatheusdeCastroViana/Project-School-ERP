@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',  
     'usuarios',
     'funcionarios',
-    'dashboard',
     
     'allauth',
     'allauth.account',
@@ -65,7 +64,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',  
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'usuarios.context_processors.menu_lateral',
             ],
         },
     },
@@ -130,7 +128,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "none"  
-LOGIN_REDIRECT_URL = '/dashboard/' 
+LOGIN_REDIRECT_URL = '/usuarios/dashboard/' 
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 LANGUAGE_CODE = 'pt-br'

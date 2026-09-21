@@ -6,6 +6,7 @@ from . import views_lgpd
 app_name = 'usuarios'
 
 urlpatterns = [
+
     path('dashboard/', views_2fa.dashboard, name='dashboard'),
     path('logout/', views_2fa.logout_usuario, name='logout'),
     

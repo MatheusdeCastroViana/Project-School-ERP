@@ -18,13 +18,6 @@ class UsuarioBackend(ModelBackend):
         try:
             usuario = Usuario.objects.get(email=email)
         except Usuario.DoesNotExist:
-            registrar_evento_autenticacao(
-                usuario=None,
-                evento='login_falha_usuario_inexistente',
-                sucesso=False,
-                ip_address=request.META.get('REMOTE_ADDR') if request else None,
-                detalhes={'email_tentado': str(email)[:254]}
-            )
             return None
 
         if usuario.bloqueado_ate is not None and usuario.bloqueado_ate > timezone.now():
@@ -38,12 +31,6 @@ class UsuarioBackend(ModelBackend):
 
         if usuario.check_password(password):
             if not self.user_can_authenticate(usuario):
-                registrar_evento_autenticacao(
-                    usuario=usuario,
-                    evento='login_falha_conta_inativa',
-                    sucesso=False,
-                    ip_address=request.META.get('REMOTE_ADDR') if request else None
-                )
                 return None
 
             usuario.tentativas_login_falhas = 0

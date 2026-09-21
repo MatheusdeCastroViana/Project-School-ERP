@@ -114,7 +114,7 @@ def verificar_2fa(request):
                 config.save()
                 registrar_evento_2fa(usuario=usuario, evento='verificacao_sucesso', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'))
                 messages.success(request, 'Autenticação 2FA concluída com sucesso!')
-                return redirect('dashboard:home')
+                return redirect('usuarios:dashboard')
             else:
                 registrar_evento_2fa(usuario=usuario, evento='verificacao_falha', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Token inválido')
                 messages.error(request, 'Código 2FA inválido. Tente novamente.')
