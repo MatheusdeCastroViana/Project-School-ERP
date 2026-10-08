@@ -3,6 +3,9 @@ from functools import lru_cache
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+import hashlib
+import hmac
+from functools import lru_cache
 
 
 class ErroDecifragem(Exception):
@@ -39,3 +42,14 @@ def rotacionar(token):
         return _obter_fernet().rotate(token.encode("ascii")).decode("ascii")
     except (InvalidToken, UnicodeError):
         raise ErroDecifragem("Falha ao decifrar o valor.") from None
+
+# hmac pro cpf
+def indice_cego(texto):
+    chave = getattr(settings, "BLIND_INDEX_KEY", "")
+    if len(chave) < 32:
+        raise ImproperlyConfigured(
+            "BLIND_INDEX_KEY não está configurada ou tem menos de 32 caracteres."
+        )
+    return hmac.new(
+        chave.encode("utf-8"), texto.encode("utf-8"), hashlib.sha256
+    ).hexdigest()

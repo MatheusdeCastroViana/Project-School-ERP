@@ -187,3 +187,5 @@ TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24
 LOGIN_URL = '/accounts/login/'
 
 FIELD_ENCRYPTION_KEYS = config('FIELD_ENCRYPTION_KEYS', default='', cast=Csv())
+
+BLIND_INDEX_KEY = config('BLIND_INDEX_KEY', default='')
