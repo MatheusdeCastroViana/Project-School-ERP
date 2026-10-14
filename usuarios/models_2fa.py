@@ -7,6 +7,7 @@ import pyotp
 import qrcode
 import base64
 from io import BytesIO
+from config.campos import CampoCifrado
 
 
 class Configuracao2FA(models.Model):
@@ -18,7 +19,7 @@ class Configuracao2FA(models.Model):
         on_delete=models.CASCADE,
         related_name='config_2fa'
     )
-    chave_secreta = models.CharField(max_length=32, unique=True)
+    chave_secreta = CampoCifrado() # Cifrado
     ativado = models.BooleanField(default=False)
     criado_em = models.DateTimeField(auto_now_add=True)
     ultimo_uso = models.DateTimeField(null=True, blank=True)

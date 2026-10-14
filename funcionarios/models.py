@@ -1,5 +1,19 @@
-from django.db import models
 from django.contrib.auth.models import Permission
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxLengthValidator
+from django.db import models
+
+from config.campos import CampoCifrado
+from config.criptografia import indice_cego
+
+
+def somente_digitos(texto):
+    return "".join(caractere for caractere in texto if caractere.isdigit())
+
+
+class FuncionarioQuerySet(models.QuerySet):
+    def por_cpf(self, cpf):
+        return self.filter(cpf_indice=indice_cego(somente_digitos(cpf)))
 
 class Setor(models.Model):
     nome = models.CharField(max_length=100, unique=True)
@@ -27,13 +41,31 @@ class Cargo(models.Model):
 # Talvez adicionar data de admissão mais pra frente
 class Funcionario(models.Model):
     nome = models.CharField(max_length=150)
-    cpf = models.CharField(max_length=14, unique=True)
+    cpf = CampoCifrado(validators=[MaxLengthValidator(14)])
+    cpf_indice = models.CharField(max_length=64, unique=True, editable=False) #hmac pra garantir que o cpf seja único
     ativo = models.BooleanField(default=True)
-    telefone = models.CharField(max_length=11, blank=True, default="")
+    telefone = CampoCifrado(blank=True, default="", validators=[MaxLengthValidator(11)])
     cargo = models.ForeignKey(Cargo, on_delete=models.PROTECT, null=True, blank=True)
+
+    objects = FuncionarioQuerySet.as_manager()
 
     def __str__(self):
         return self.nome
+
+    def clean(self):
+        super().clean()
+        if not self.cpf:
+            return
+        duplicados = Funcionario.objects.por_cpf(self.cpf).exclude(pk=self.pk)
+        if duplicados.exists():
+            raise ValidationError({"cpf": "Já existe um funcionário com este CPF."})
+
+    def save(self, *args, **kwargs):
+        self.cpf_indice = indice_cego(somente_digitos(self.cpf))
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "cpf" in update_fields:
+            kwargs["update_fields"] = [*update_fields, "cpf_indice"]
+        super().save(*args, **kwargs)
 
 class JornadaTrabalho(models.Model):
     class DiaSemana(models.IntegerChoices):
