@@ -189,3 +189,33 @@ LOGIN_URL = '/accounts/login/'
 FIELD_ENCRYPTION_KEYS = config('FIELD_ENCRYPTION_KEYS', default='', cast=Csv())
 
 BLIND_INDEX_KEY = config('BLIND_INDEX_KEY', default='')
+# CONFIGURAÇÕES DE SEGURANÇA DE TRANSPORTE (HTTPS/TLS)
+# Bloqueio de conexões não seguras, Comunicação protegida por TLS
+# Estas configurações só devem ser ativadas em PRODUÇÃO
+# Em desenvolvimento (DEBUG=True), iremos manter HTTP para facilitar testes
+
+if not DEBUG:
+    # Redireciona todas as requisições HTTP para HTTPS automaticamente
+    SECURE_SSL_REDIRECT = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    # Informa ao navegador que o site só deve ser acessado via HTTPS por um período de 1 ano (31536000 segundos)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Irá garantir que cookies de sessão e CSRF só trafeguem em conexões seguras
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Irá proteger cabeçalhos de segurança
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_REFERRER_POLICY = 'same-origin'
+    
+else:
+    # Configurações para o nosso ambiente de desenvolvimento
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
