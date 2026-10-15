@@ -20,3 +20,5 @@ pycparser==3.0
 colorama==0.4.6
 tzdata==2026.3
 cryptography==50.0.2
+gunicorn==26.0.0
+whitenoise==6.12.0
