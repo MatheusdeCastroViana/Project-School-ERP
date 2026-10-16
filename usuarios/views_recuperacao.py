@@ -24,7 +24,12 @@ logger = logging.getLogger('auditoria_seguranca')
 def _enviar_email_recuperacao(usuario, token_obj, token_cru, link_recuperacao):
     """
     Envia o e-mail de recuperação.
-    Recebe o objeto do banco (para dados como expira_em) e a string crua (para o link/print).
+    
+    Args:
+        usuario: Objeto do usuário
+        token_obj: Objeto TokenRecuperacaoSenha (para pegar expira_em)
+        token_cru: String do token sem hash (para o link e debug)
+        link_recuperacao: URL completa de recuperação
     """
     contexto = {
         'usuario': usuario,
@@ -90,14 +95,14 @@ def solicitar_recuperacao(request):
             )
 
             if usuario:
-                # O Marcos alterou o create para retornar: (instancia, token_cru)
+                # O create retorna uma tupla: (objeto_do_banco, token_cru)
                 token_obj, token_cru = TokenRecuperacaoSenha.objects.create(
                     usuario=usuario,
                     ip_solicitacao=ip_address,
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
 
-                # O link DEVE usar o token_cru (string), não o hash
+                # O link DEVE usar token_cru (string), não o hash
                 link_recuperacao = request.build_absolute_uri(
                     f'/usuarios/recuperar-senha/{token_cru}/'
                 )
@@ -121,6 +126,9 @@ def solicitar_recuperacao(request):
 @csrf_protect
 @never_cache
 def confirmar_recuperacao(request, token):
+    """
+    View para validar token e permitir definição de nova senha.
+    """
     try:
         # O token da URL é cru, precisamos hashear para buscar no banco
         token_obj = TokenRecuperacaoSenha.objects.get(token=hash_token(token))
@@ -159,10 +167,7 @@ def confirmar_recuperacao(request, token):
             usuario.bloqueado_ate = None
             usuario.save()
 
-            # Invalida o token atual
             token_obj.marcar_como_utilizado()
-            
-            # Segurança extra: invalida QUALQUER outro token pendente deste usuário
             TokenRecuperacaoSenha.objects.filter(
                 usuario=usuario, utilizado=False
             ).update(utilizado=True, utilizado_em=timezone.now())
