@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.cache import never_cache
-from .models_recuperacao import TokenRecuperacaoSenha
+from .models_recuperacao import TokenRecuperacaoSenha, hash_token
 from .forms_recuperacao import SolicitarRecuperacaoForm, NovaSenhaForm
 from usuarios.audit import registrar_evento_recuperacao_senha, registrar_resultado_recuperacao_senha
 
@@ -29,24 +30,25 @@ def solicitar_recuperacao(request):
             )
 
             if usuario:
-                token = TokenRecuperacaoSenha.objects.create(
+                token_obj, token_cru = TokenRecuperacaoSenha.gerar(
                     usuario=usuario,
                     ip_solicitacao=ip_address,
                     user_agent=request.META.get('HTTP_USER_AGENT', '')
                 )
 
                 link_recuperacao = request.build_absolute_uri(
-                    f'/usuarios/recuperar-senha/{token.token}/'
+                    f'/usuarios/recuperar-senha/{token_cru}/'
                 )
 
-                print(f"\n{'='*60}")
-                print(f"LINK DE RECUPERAÇÃO DE SENHA (Ambiente de Desenvolvimento)")
-                print(f"{'='*60}")
-                print(f"Usuário: {usuario.email}")
-                print(f"Token: {token.token}")
-                print(f"Expira em: {token.expira_em}")
-                print(f"Link: {link_recuperacao}")
-                print(f"{'='*60}\n")
+                if settings.DEBUG:
+                    print(f"\n{'='*60}")
+                    print(f"LINK DE RECUPERAÇÃO DE SENHA (Ambiente de Desenvolvimento)")
+                    print(f"{'='*60}")
+                    print(f"Usuário: {usuario.email}")
+                    print(f"Token: {token_cru}")
+                    print(f"Expira em: {token_obj.expira_em}")
+                    print(f"Link: {link_recuperacao}")
+                    print(f"{'='*60}\n")
 
             messages.success(
                 request,
@@ -66,7 +68,7 @@ def solicitar_recuperacao(request):
 def confirmar_recuperacao(request, token):
 
     try:
-        token_obj = TokenRecuperacaoSenha.objects.get(token=token)
+        token_obj = TokenRecuperacaoSenha.objects.get(token=hash_token(token))
     except TokenRecuperacaoSenha.DoesNotExist:
         # RS 2.7 — falha: token nem existe no banco
         registrar_resultado_recuperacao_senha(
@@ -102,9 +104,14 @@ def confirmar_recuperacao(request, token):
         if form.is_valid():
             usuario = token_obj.usuario
             usuario.set_password(form.cleaned_data['senha1'])
+            usuario.tentativas_login_falhas = 0
+            usuario.bloqueado_ate = None
             usuario.save()
 
             token_obj.marcar_como_utilizado()
+            TokenRecuperacaoSenha.objects.filter(
+                usuario=usuario, utilizado=False
+            ).update(utilizado=True, utilizado_em=timezone.now())
 
             # Sucesso no log
             registrar_resultado_recuperacao_senha(usuario=usuario, sucesso=True)

@@ -35,25 +35,37 @@ class UsuarioAdmin(ERPModelAdmin, UserAdmin):
         }),
     )
 
+    def get_readonly_fields(self, request, obj=None):
+        campos = super().get_readonly_fields(request, obj)
+        if not request.user.is_superuser:
+            campos = (*campos, 'is_superuser', 'is_staff', 'groups', 'user_permissions')
+        return campos
 
 @admin.register(Configuracao2FA)
 class Configuracao2FAAdmin(ERPModelAdmin):
     list_display = ('usuario', 'ativado', 'criado_em', 'ultimo_uso')
     list_filter = ('ativado',)
     search_fields = ('usuario__email',)
-    readonly_fields = ('chave_secreta', 'criado_em')
+    exclude = ('chave_secreta',)
+    readonly_fields = ('usuario', 'criado_em', 'ultimo_uso')
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(TokenRecuperacaoSenha)
 class TokenRecuperacaoSenhaAdmin(ERPModelAdmin):
     list_display = ('usuario', 'criado_em', 'expira_em', 'utilizado', 'ip_solicitacao')
     list_filter = ('utilizado', 'criado_em')
-    search_fields = ('usuario__email', 'token')
-    readonly_fields = ('token', 'criado_em')
+    search_fields = ('usuario__email',)
+    readonly_fields = (
+        'usuario', 'criado_em', 'expira_em', 'utilizado',
+        'utilizado_em', 'ip_solicitacao', 'user_agent',
+    )
     
     fieldsets = (
         ('Informações do Token', {
-            'fields': ('usuario', 'token', 'criado_em', 'expira_em')
+            'fields': ('usuario', 'criado_em', 'expira_em')
         }),
         ('Status', {
             'fields': ('utilizado', 'utilizado_em')
@@ -63,6 +75,8 @@ class TokenRecuperacaoSenhaAdmin(ERPModelAdmin):
         }),
     )
 
+    def has_add_permission(self, request):
+        return False
 
 @admin.register(LogAuditoria)
 class LogAuditoriaAdmin(ERPModelAdmin):
@@ -110,6 +124,3 @@ class LogAuditoriaAdmin(ERPModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_authenticated

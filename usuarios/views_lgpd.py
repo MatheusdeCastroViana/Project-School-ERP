@@ -149,8 +149,8 @@ def registrar_consentimento_view(request):
     
     except json.JSONDecodeError:
         return JsonResponse({'error': 'JSON inválido'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'error': 'Erro interno'}, status=500)
 
 
 def politica_privacidade(request):
