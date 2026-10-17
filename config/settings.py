@@ -78,10 +78,12 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
-
+# Expiração de sessão por inatividade
 SESSION_COOKIE_AGE = 1800  
 SESSION_SAVE_EVERY_REQUEST = True
 
+# Hasher de senha Argon2id como primeira opção
+# PBKDF2 como segunda opção
 PASSWORD_HASHERS = [
     'usuarios.hashers.UsuarioArgon2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
@@ -121,6 +123,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']  
 
 # CONFIGURAÇÕES DE E-MAIL (API via Anymail)
+# Bloqueio de conexões não seguras, Comunicação protegida por TLS
 
 # Em desenvolvimento (DEBUG=True), usaremos o console. 
 # Em produção (DEBUG=False), usaremos a API do Resend via HTTPS.
@@ -185,16 +188,25 @@ BLIND_INDEX_KEY = config('BLIND_INDEX_KEY', default='')
 # CONFIGURAÇÕES DE SEGURANÇA DE TRANSPORTE (HTTPS/TLS)
 
 if not DEBUG:
+    # Redireciona todas as requisições HTTP para HTTPS automaticamente
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # HSTS (HTTP Strict Transport Security)
+    # Informa ao navegador que o site só deve ser acessado via HTTPS por um período de 1 ano (31536000 segundos)
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+    # Irá garantir que cookies de sessão e CSRF só trafeguem em conexões seguras
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+    # Irá proteger cabeçalhos de segurança
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_REFERRER_POLICY = 'same-origin'
 else:
+    # Configurações para o nosso ambiente de desenvolvimento
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
