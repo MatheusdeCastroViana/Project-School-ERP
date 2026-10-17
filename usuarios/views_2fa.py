@@ -83,17 +83,9 @@ def ativar_2fa(request):
 
 @login_required
 def desativar_2fa(request):
-    if request.method == 'POST':
-        try:
-            config = request.user.config_2fa
-            config.ativado = False
-            config.save()
-            registrar_evento_2fa(usuario=request.user, evento='desativacao', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'))
-            messages.success(request, '2FA desativado com sucesso.')
-            return redirect('usuarios:dashboard')
-        except Configuracao2FA.DoesNotExist:
-            messages.error(request, '2FA não está configurado para sua conta.')
-    return render(request, 'usuarios/desativar_2fa.html')
+    registrar_evento_2fa(usuario=request.user, evento='desativacao', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Tentativa bloqueada: 2FA obrigatório')
+    messages.error(request, 'O 2FA é obrigatório para todos os usuários e não pode ser desativado.')
+    return redirect('usuarios:dashboard')
 
 
 def verificar_2fa(request):
