@@ -50,7 +50,7 @@ def _enviar_email_recuperacao(usuario, token_obj, token_cru, link_recuperacao):
     )
     
     assunto = 'Recuperação de Senha - ERP Escola Profissionalizante'
-    remetente = getattr(settings, 'EMAIL_FROM', 'noreply@escolaprofissionalizante.com.br')
+    remetente = getattr(settings, 'EMAIL_FROM', 'onboarding@resend.dev')
     destinatarios = [usuario.email]
     
     try:
