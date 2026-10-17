@@ -40,11 +40,29 @@
                 </tr>
                 <tr>
                     <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "CPF" %}</td>
-                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.cpf }}</td>
+                    <td style="padding: 4px 0; text-align: right;">
+                        <span id="valor-cpf" data-mascarado="{{ dados.funcionario.cpf_mascarado }}" data-completo="{{ dados.funcionario.cpf }}">{{ dados.funcionario.cpf_mascarado }}</span>
+                    <button type="button" data-revelar="valor-cpf" aria-pressed="false" aria-label="{% trans 'Mostrar ou ocultar CPF' %}" style="background: none; border: none; cursor: pointer; color: var(--auth-muted); padding: 0 0 0 8px; vertical-align: middle;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 18px; height: 18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                    </td>
                 </tr>
                 <tr>
                     <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Telefone" %}</td>
-                    <td style="padding: 4px 0; text-align: right;">{{ dados.funcionario.telefone|default:"—" }}</td>
+                    <td style="padding: 4px 0; text-align: right;">
+                        {% if dados.funcionario.telefone %}
+                        <span id="valor-telefone" data-mascarado="{{ dados.funcionario.telefone_mascarado }}" data-completo="{{ dados.funcionario.telefone }}">{{ dados.funcionario.telefone_mascarado }}</span>
+                    <button type="button" data-revelar="valor-telefone" aria-pressed="false" aria-label="{% trans 'Mostrar ou ocultar telefone' %}" style="background: none; border: none; cursor: pointer; color: var(--auth-muted); padding: 0 0 0 8px; vertical-align: middle;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 18px; height: 18px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </button>
+                        {% else %}—{% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <td style="padding: 4px 0; color: var(--auth-muted);">{% trans "Cargo" %}</td>
@@ -100,4 +118,14 @@
         </div>
     </div>
 </div>
+<script>
+document.querySelectorAll('[data-revelar]').forEach(function (botao) {
+    botao.addEventListener('click', function () {
+        var alvo = document.getElementById(botao.dataset.revelar);
+        var mostrando = alvo.textContent === alvo.dataset.completo;
+        alvo.textContent = mostrando ? alvo.dataset.mascarado : alvo.dataset.completo;
+        botao.setAttribute('aria-pressed', String(!mostrando));
+    });
+});
+</script>
 {% endblock content %}

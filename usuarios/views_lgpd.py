@@ -10,6 +10,8 @@ from .audit import (
     registrar_consentimento,
     registrar_solicitacao_exclusao,
 )
+from funcionarios.mascaras import mascarar_cpf, mascarar_telefone
+
 from .models_2fa import Configuracao2FA
 
 CAMPOS_PROTEGIDOS = [
@@ -72,6 +74,9 @@ def obter_dados_pessoais(usuario):
 @login_required
 def consultar_dados(request):
     dados = obter_dados_pessoais(request.user)
+    if dados['funcionario']:
+        dados['funcionario']['cpf_mascarado'] = mascarar_cpf(dados['funcionario']['cpf'])
+        dados['funcionario']['telefone_mascarado'] = mascarar_telefone(dados['funcionario']['telefone'])
     return render(request, 'usuarios/consultar_dados.html', {'dados': dados})
 
 
