@@ -7,6 +7,7 @@ from django.urls import reverse
 from config.criptografia import decifrar, indice_cego
 from config.test_criptografia import chaves, gerar_chave
 from funcionarios.models import Funcionario
+from usuarios.models_2fa import Configuracao2FA
 
 Usuario = get_user_model()
 
@@ -135,7 +136,13 @@ class TelasLgpdComDadosCifradosTests(TestCase):
         self.usuario = Usuario.objects.create_user(
             email="carla@exemplo.com", password="SenhaTeste123!", funcionario=funcionario
         )
+        Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
         self.client.force_login(self.usuario)
+
+    def test_consulta_de_dados_exibe_cpf_e_telefone_mascarados(self):
+        resposta = self.client.get(reverse("usuarios:consultar_dados"))
+        self.assertContains(resposta, 'id="valor-cpf" data-mascarado="***.555.555-**"')
+        self.assertContains(resposta, 'id="valor-telefone" data-mascarado="*******6666"')
 
     def test_consulta_de_dados_mostra_cpf_e_telefone_originais(self):
         resposta = self.client.get(reverse("usuarios:consultar_dados"))
