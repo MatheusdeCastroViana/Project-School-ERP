@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model, login
 from django.conf import settings
 from django.db import transaction
+from django.views.decorators.http import require_POST
 from datetime import timedelta
 from .models_2fa import Configuracao2FA
 from .audit import registrar_evento_2fa, registrar_evento_autenticacao
@@ -35,6 +36,7 @@ def dashboard(request):
     return render(request, 'usuarios/dashboard.html', context)
 
 
+@require_POST
 @login_required
 def logout_usuario(request):
     """

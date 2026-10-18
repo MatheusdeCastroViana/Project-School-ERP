@@ -66,9 +66,12 @@
         </form>
 
         <div class="auth-form__actions" style="margin-top: 16px;">
-            <a href="{% url 'usuarios:logout' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
-                {% trans "Sair" %}
-            </a>
+            <form action="{% url 'usuarios:logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="auth-btn auth-btn--outline" style="width: 100%;">
+                    {% trans "Sair" %}
+                </button>
+            </form>
         </div>
     </div>
 </div>
