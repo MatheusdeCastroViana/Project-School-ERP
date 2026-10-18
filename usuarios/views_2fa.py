@@ -4,6 +4,9 @@ from django.contrib.auth import logout as django_logout
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import get_user_model, login
+from django.conf import settings
+from django.db import transaction
+from datetime import timedelta
 from .models_2fa import Configuracao2FA
 from .audit import registrar_evento_2fa, registrar_evento_autenticacao
 
@@ -88,29 +91,76 @@ def desativar_2fa(request):
     return redirect('usuarios:dashboard')
 
 
+def _limpar_sessao_pendente_2fa(request):
+    request.session.pop('usuario_pendente_2fa', None)
+    request.session.pop('usuario_pendente_2fa_em', None)
+
+
 def verificar_2fa(request):
     usuario_id = request.session.get('usuario_pendente_2fa')
     if not usuario_id:
         return redirect('account_login')
-    
+
+    iniciado_em = request.session.get('usuario_pendente_2fa_em')
+    validade_segundos = settings.TWOFA_PENDENTE_MINUTOS * 60
+    if iniciado_em is None or timezone.now().timestamp() - iniciado_em > validade_segundos:
+        usuario_expirado = Usuario.objects.filter(id=usuario_id).first()
+        if usuario_expirado:
+            registrar_evento_2fa(usuario=usuario_expirado, evento='sessao_expirada', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Tempo para informar o código esgotado')
+        _limpar_sessao_pendente_2fa(request)
+        messages.error(request, 'O tempo para informar o código expirou. Faça login novamente.')
+        return redirect('account_login')
+
     if request.method == 'POST':
         token = request.POST.get('token', '').strip()
+        ip_address = request.META.get('REMOTE_ADDR')
         try:
-            usuario = Usuario.objects.get(id=usuario_id)
-            config = usuario.config_2fa
-            if config.verify_token(token):
-                login(request, usuario, backend='usuarios.backends.UsuarioBackend')
-                if 'usuario_pendente_2fa' in request.session:
-                    del request.session['usuario_pendente_2fa']
-                config.ultimo_uso = timezone.now()
-                config.save()
-                registrar_evento_2fa(usuario=usuario, evento='verificacao_sucesso', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'))
-                messages.success(request, 'Autenticação 2FA concluída com sucesso!')
-                return redirect('dashboard:home')
-            else:
-                registrar_evento_2fa(usuario=usuario, evento='verificacao_falha', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Token inválido')
-                messages.error(request, 'Código 2FA inválido. Tente novamente.')
-        except (Usuario.DoesNotExist, Configuracao2FA.DoesNotExist):
+            with transaction.atomic():
+                config = Configuracao2FA.objects.select_for_update().select_related('usuario').get(usuario_id=usuario_id)
+                usuario = config.usuario
+                agora = timezone.now()
+
+                if usuario.bloqueado_ate is not None and usuario.bloqueado_ate > agora:
+                    resultado = 'bloqueado'
+                elif config.verify_token(token):
+                    config.tentativas_falhas = 0
+                    config.ultimo_uso = agora
+                    config.save(update_fields=['tentativas_falhas', 'ultimo_uso'])
+                    resultado = 'sucesso'
+                else:
+                    config.tentativas_falhas += 1
+                    if config.tentativas_falhas >= settings.TWOFA_MAX_TENTATIVAS:
+                        usuario.bloqueado_ate = agora + timedelta(minutes=settings.LOGIN_BLOQUEIO_MINUTOS)
+                        usuario.save(update_fields=['bloqueado_ate'])
+                        config.tentativas_falhas = 0
+                        resultado = 'bloqueou'
+                    else:
+                        resultado = 'falha'
+                    config.save(update_fields=['tentativas_falhas'])
+        except Configuracao2FA.DoesNotExist:
+            _limpar_sessao_pendente_2fa(request)
             messages.error(request, 'Erro na verificação. Faça login novamente.')
             return redirect('account_login')
+
+        if resultado == 'bloqueado':
+            _limpar_sessao_pendente_2fa(request)
+            messages.error(request, 'Conta temporariamente bloqueada. Tente novamente mais tarde.')
+            return redirect('account_login')
+
+        if resultado == 'sucesso':
+            login(request, usuario, backend='usuarios.backends.UsuarioBackend')
+            _limpar_sessao_pendente_2fa(request)
+            registrar_evento_2fa(usuario=usuario, evento='verificacao_sucesso', sucesso=True, ip_address=ip_address)
+            messages.success(request, 'Autenticação 2FA concluída com sucesso!')
+            return redirect('dashboard:home')
+
+        registrar_evento_2fa(usuario=usuario, evento='verificacao_falha', sucesso=False, ip_address=ip_address, detalhes='Token inválido')
+
+        if resultado == 'bloqueou':
+            registrar_evento_2fa(usuario=usuario, evento='bloqueio', sucesso=False, ip_address=ip_address, detalhes=f'{settings.TWOFA_MAX_TENTATIVAS} códigos inválidos seguidos; conta bloqueada por {settings.LOGIN_BLOQUEIO_MINUTOS} minutos')
+            _limpar_sessao_pendente_2fa(request)
+            messages.error(request, 'Muitas tentativas inválidas. Sua conta foi bloqueada temporariamente.')
+            return redirect('account_login')
+
+        messages.error(request, 'Código 2FA inválido. Tente novamente.')
     return render(request, 'usuarios/verificar_2fa.html')

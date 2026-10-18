@@ -21,6 +21,7 @@ class Configuracao2FA(models.Model):
     )
     chave_secreta = CampoCifrado() # Cifrado
     ativado = models.BooleanField(default=False)
+    tentativas_falhas = models.PositiveIntegerField(default=0)
     criado_em = models.DateTimeField(auto_now_add=True)
     ultimo_uso = models.DateTimeField(null=True, blank=True)
 

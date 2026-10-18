@@ -90,11 +90,14 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
+# Bloqueio de força bruta
 LOGIN_MAX_TENTATIVAS = 5
 LOGIN_BLOQUEIO_MINUTOS = 15
+TWOFA_MAX_TENTATIVAS = 5
+TWOFA_PENDENTE_MINUTOS = 5
 
 AUTHENTICATION_BACKENDS = [
-    'usuarios.backends.UsuarioBackend'  
+    'usuarios.backends.UsuarioBackend', 
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
