@@ -7,15 +7,8 @@ from .models_2fa import Configuracao2FA
 from .models_recuperacao import TokenRecuperacaoSenha
 
 
-class ERPModelAdmin(admin.ModelAdmin):
-    class Media:
-        css = {
-            'all': ('admin/css/base_custom.css',)
-        }
-
-
 @admin.register(Usuario)
-class UsuarioAdmin(ERPModelAdmin, UserAdmin):
+class UsuarioAdmin(UserAdmin):
     list_display = ('email', 'is_staff', 'is_active', 'tentativas_login_falhas', 'bloqueado_ate')
     list_filter = ('is_staff', 'is_active')
     search_fields = ('email',)
@@ -42,7 +35,7 @@ class UsuarioAdmin(ERPModelAdmin, UserAdmin):
         return campos
 
 @admin.register(Configuracao2FA)
-class Configuracao2FAAdmin(ERPModelAdmin):
+class Configuracao2FAAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'ativado', 'criado_em', 'ultimo_uso')
     list_filter = ('ativado',)
     search_fields = ('usuario__email',)
@@ -54,7 +47,7 @@ class Configuracao2FAAdmin(ERPModelAdmin):
 
 
 @admin.register(TokenRecuperacaoSenha)
-class TokenRecuperacaoSenhaAdmin(ERPModelAdmin):
+class TokenRecuperacaoSenhaAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'criado_em', 'expira_em', 'utilizado', 'ip_solicitacao')
     list_filter = ('utilizado', 'criado_em')
     search_fields = ('usuario__email',)
@@ -79,7 +72,7 @@ class TokenRecuperacaoSenhaAdmin(ERPModelAdmin):
         return False
 
 @admin.register(LogAuditoria)
-class LogAuditoriaAdmin(ERPModelAdmin):
+class LogAuditoriaAdmin(admin.ModelAdmin):
    
     list_display = ('data_hora_formatada', 'usuario', 'tipo_evento', 'sucesso_formatado', 'ip_address')
     list_display_links = ('data_hora_formatada',)

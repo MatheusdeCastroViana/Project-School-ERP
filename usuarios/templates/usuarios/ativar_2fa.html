@@ -64,6 +64,12 @@
                 </button>
             </div>
         </form>
+
+        <div class="auth-form__actions" style="margin-top: 16px;">
+            <a href="{% url 'usuarios:logout' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Sair" %}
+            </a>
+        </div>
     </div>
 </div>
 {% endblock content %}

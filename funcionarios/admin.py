@@ -1,12 +1,6 @@
 from django.contrib import admin
+from .mascaras import mascarar_cpf, mascarar_telefone
 from .models import Funcionario, Setor, Cargo, JornadaTrabalho
-
-
-def mascarar_cpf(cpf):
-    digitos = "".join(c for c in cpf if c.isdigit())
-    if len(digitos) != 11:
-        return "***"
-    return f"***.{digitos[3:6]}.{digitos[6:9]}-**"
 
 
 @admin.register(Funcionario)
@@ -31,7 +25,7 @@ class FuncionarioAdmin(admin.ModelAdmin):
     def telefone_mascarado(self, obj):
         if not obj.telefone:
             return '—'
-        return '*' * max(len(obj.telefone) - 4, 0) + obj.telefone[-4:]
+        return mascarar_telefone(obj.telefone)
 
 
 admin.site.register(Setor)
