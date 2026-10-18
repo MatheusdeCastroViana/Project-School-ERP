@@ -50,7 +50,8 @@ def _enviar_email_recuperacao(usuario, token_obj, token_cru, link_recuperacao):
     )
     
     assunto = 'Recuperação de Senha - ERP Escola Profissionalizante'
-    remetente = getattr(settings, 'EMAIL_FROM', 'onboarding@resend.dev')
+    # CORREÇÃO: Usar DEFAULT_FROM_EMAIL, que é o padrão do Django e do Resend
+    remetente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev')
     destinatarios = [usuario.email]
     
     try:
@@ -95,8 +96,8 @@ def solicitar_recuperacao(request):
             )
 
             if usuario:
-                # O create retorna uma tupla: (objeto_do_banco, token_cru)
-                token_obj, token_cru = TokenRecuperacaoSenha.objects.create(
+                # CORREÇÃO: Usar o método gerar() que retorna a tupla (objeto, token_cru)
+                token_obj, token_cru = TokenRecuperacaoSenha.gerar(
                     usuario=usuario,
                     ip_solicitacao=ip_address,
                     user_agent=request.META.get('HTTP_USER_AGENT', '')

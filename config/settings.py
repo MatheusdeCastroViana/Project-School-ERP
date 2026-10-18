@@ -122,24 +122,17 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']  
 
-# CONFIGURAÇÕES DE E-MAIL (API via Anymail)
-# Bloqueio de conexões não seguras, Comunicação protegida por TLS
+# CONFIGURAÇÕES DE E-MAIL
 
-# Em desenvolvimento (DEBUG=True), usaremos o console. 
-# Em produção (DEBUG=False), usaremos a API do Resend via HTTPS.
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
-# Configurações específicas do Anymail + Resend
-ANYMAIL = {
-    "RESEND_API_KEY": config('RESEND_API_KEY', default=''),
-    "RESEND_API_URL": "https://api.resend.com",
-}
-
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='onboarding@resend.dev')
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_HOST = config('EMAIL_HOST', default='sandbox.smtp.mailtrap.io')
+EMAIL_PORT = config('EMAIL_PORT', default=2525, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='erp@escolaprofissionalizante.com.br')
+EMAIL_TIMEOUT = 10
 
 # LOGS DE AUDITORIA
 
