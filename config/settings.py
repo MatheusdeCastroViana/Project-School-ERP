@@ -36,6 +36,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'usuarios.middleware.IPClienteMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -180,6 +181,7 @@ if not DEBUG:
     # Redireciona todas as requisições HTTP para HTTPS automaticamente
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    IP_CLIENTE_CABECALHO = 'HTTP_TRUE_CLIENT_IP'
 
     # HSTS (HTTP Strict Transport Security)
     # Informa ao navegador que o site só deve ser acessado via HTTPS por um período de 1 ano (31536000 segundos)
@@ -196,6 +198,7 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = 'same-origin'
 else:
     # Configurações para o nosso ambiente de desenvolvimento
+    IP_CLIENTE_CABECALHO = None
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
