@@ -94,8 +94,7 @@ LOGIN_MAX_TENTATIVAS = 5
 LOGIN_BLOQUEIO_MINUTOS = 15
 
 AUTHENTICATION_BACKENDS = [
-    'usuarios.backends.UsuarioBackend', 
-    'allauth.account.auth_backends.AuthenticationBackend',  
+    'usuarios.backends.UsuarioBackend'  
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
