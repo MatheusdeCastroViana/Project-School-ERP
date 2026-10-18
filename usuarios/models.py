@@ -80,6 +80,7 @@ class LogAuditoria(models.Model):
         ('recuperacao_senha_falha', 'Recuperação de Senha - Falha'),
         ('exclusao_dados', 'Exclusão de Dados'),
         ('consentimento_lgpd', 'Consentimento LGPD'),
+        ('exportacao_dados', 'Exportação de Dados'),
         ('outro', 'Outro'),
     ]
     
