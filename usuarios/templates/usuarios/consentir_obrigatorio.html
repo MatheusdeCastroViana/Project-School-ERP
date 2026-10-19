@@ -1,0 +1,47 @@
+{% extends "account/base_entrance.html" %}
+{% load static %}
+
+{% block head_title %}Consentimento Obrigatório{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'auth/css/lgpd.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card lgpd-page" style="max-width: 600px;">
+        <div class="lgpd-page__header">
+            <h1 class="lgpd-page__title">Consentimento de Dados Necessário</h1>
+        </div>
+
+        <div class="lgpd-page__content">
+            <p>
+                Para garantir a segurança e a conformidade com a Lei Geral de Proteção de Dados (LGPD), 
+                precisamos do seu consentimento explícito para o tratamento dos seus dados pessoais neste sistema.
+            </p>
+            
+            {% if versao_ativa %}
+            <div style="background: var(--auth-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--auth-border); margin: 16px 0; font-size: 14px; max-height: 300px; overflow-y: auto;">
+                {{ versao_ativa.texto_apresentado|linebreaks }}
+            </div>
+            {% endif %}
+
+            <p style="font-size: 13px; color: var(--auth-muted);">
+                Você pode revogar este consentimento a qualquer momento na seção "Meus Dados". 
+                A recusa impedirá o acesso ao sistema, pois o tratamento é necessário para a execução do contrato de trabalho/estudo.
+            </p>
+        </div>
+
+        <!-- Reutiliza o popup como formulário de ação nesta página -->
+        {% include "usuarios/consentimento_popup.html" %}
+    </div>
+</div>
+
+<script>
+    // Força a exibição do popup nesta página específica
+    document.addEventListener('DOMContentLoaded', function() {
+        const popup = document.getElementById('lgpd-consent-popup');
+        if (popup) popup.style.display = 'flex';
+    });
+</script>
+{% endblock %}

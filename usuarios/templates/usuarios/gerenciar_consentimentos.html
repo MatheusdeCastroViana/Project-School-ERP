@@ -1,0 +1,70 @@
+{% extends "account/base_entrance.html" %}
+{% load i18n %}
+
+{% block head_title %}Gerenciar Consentimentos{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+    <div class="auth-card" style="max-width: 700px;">
+        <h1 class="auth-title">{% trans "Meus Consentimentos LGPD" %}</h1>
+        <p class="auth-text" style="margin-bottom: 24px;">
+            Abaixo está o histórico de consentimentos fornecidos. Você pode revogar qualquer consentimento a qualquer momento. 
+            A revogação não afeta a legalidade do tratamento realizado com base no consentimento previamente dado.
+        </p>
+
+        {% if consentimentos %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--auth-border);">
+                        <th style="padding: 12px; text-align: left;">Finalidade</th>
+                        <th style="padding: 12px; text-align: left;">Versão</th>
+                        <th style="padding: 12px; text-align: left;">Status</th>
+                        <th style="padding: 12px; text-align: left;">Data</th>
+                        <th style="padding: 12px; text-align: right;">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in consentimentos %}
+                    <tr style="border-bottom: 1px solid var(--auth-border);">
+                        <td style="padding: 12px;">{{ c.get_tipo_display }}</td>
+                        <td style="padding: 12px;">{{ c.versao }}</td>
+                        <td style="padding: 12px;">
+                            {% if c.status == 'aceito' %}
+                                <span style="color: green; font-weight: bold;">✓ Aceito</span>
+                            {% elif c.status == 'revogado' %}
+                                <span style="color: red; font-weight: bold;">✗ Revogado</span>
+                            {% else %}
+                                <span style="color: orange; font-weight: bold;">! Recusado</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px;">{{ c.data_consentimento|date:"d/m/Y H:i" }}</td>
+                        <td style="padding: 12px; text-align: right;">
+                            {% if c.status == 'aceito' %}
+                            <form method="POST" action="{% url 'usuarios:revogar_consentimento' c.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="auth-btn auth-btn--outline" style="padding: 4px 12px; font-size: 12px;" onclick="return confirm('Tem certeza que deseja revogar este consentimento? O acesso a determinadas funcionalidades poderá ser limitado.');">
+                                    Revogar
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="color: var(--auth-muted); font-size: 12px;">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="auth-text">Nenhum registro de consentimento encontrado.</p>
+        {% endif %}
+
+        <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
+            <a href="{% url 'usuarios:consultar_dados' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Voltar para Meus Dados" %}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
