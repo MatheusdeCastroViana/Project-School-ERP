@@ -188,5 +188,56 @@ def registrar_consentimento_view(request):
         ultimo = ConsentimentoLGPD.obter_ultimo_consentimento(request.user, tipo)
         if ultimo and ultimo.status == 'aceito' and ultimo.versao == versao:
             return JsonResponse({'success': True, 'message': 'Consentimento já registrado'})
+
+        ConsentimentoLGPD.objects.create(
+            usuario=request.user, tipo=tipo, versao=versao, texto_hash=texto_hash,
+            status='aceito' if aceitou else 'recusado', ip_address=request.META.get('REMOTE_ADDR'),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            url_origem=request.META.get('HTTP_REFERER', '')[:200], detalhes={'origem': 'popup_pos_login'}
+        )
+        registrar_consentimento(usuario=request.user, tipo=tipo, versao=versao, aceitou=aceitou, ip_address=request.META.get('REMOTE_ADDR'))
+        return JsonResponse({'success': True, 'tipo': tipo, 'versao': versao, 'aceitou': aceitou})
+    
     except json.JSONDecodeError:
         return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception:
+        return JsonResponse({'error': 'Erro interno ao processar consentimento'}, status=500)
+
+
+@login_required
+def gerenciar_consentimentos(request):
+    consentimentos = ConsentimentoLGPD.objects.filter(usuario=request.user).order_by('-data_consentimento')
+    return render(request, 'usuarios/gerenciar_consentimentos.html', {'consentimentos': consentimentos})
+
+
+@require_POST
+@login_required
+def revogar_consentimento(request, consentimento_id):
+    try:
+        consentimento = ConsentimentoLGPD.objects.get(id=consentimento_id, usuario=request.user)
+        if consentimento.status == 'revogado':
+            messages.info(request, 'Este consentimento já foi revogado anteriormente.')
+        else:
+            consentimento.revogar(ip_address=request.META.get('REMOTE_ADDR'))
+            registrar_evento_lgpd(usuario=request.user, evento='revogacao_consentimento', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'), detalhes={'tipo': consentimento.tipo})
+            messages.success(request, f'Consentimento de "{consentimento.get_tipo_display()}" revogado com sucesso.')
+    except ConsentimentoLGPD.DoesNotExist:
+        messages.error(request, 'Consentimento não encontrado.')
+    return redirect('usuarios:gerenciar_consentimentos')
+
+
+@login_required
+def consentir_obrigatorio(request):
+    if ConsentimentoLGPD.verificar_consentimento_ativo(request.user, 'tratamento_dados'):
+        return redirect('dashboard:home')
+    versao_ativa = VersaoTextoConsentimento.objects.filter(tipo='tratamento_dados', ativa=True).first()
+    return render(request, 'usuarios/consentir_obrigatorio.html', {'versao_ativa': versao_ativa})
+
+
+def politica_privacidade(request):
+    return render(request, 'usuarios/politica_privacidade.html')
+
+def termos_uso(request):
+    return render(request, 'usuarios/termos_uso.html')
+
+        

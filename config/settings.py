@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_otp.middleware.OTPMiddleware',
     'usuarios.middleware.Exigir2FAMiddleware',
+    'usuarios.middleware.ConsentimentoMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
