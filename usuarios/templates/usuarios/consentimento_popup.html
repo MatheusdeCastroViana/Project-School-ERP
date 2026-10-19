@@ -8,8 +8,12 @@
             <p class="lgpd-consent-popup__text">
                 Para utilizar o sistema, é necessário concordar com o tratamento dos seus dados 
                 pessoais em conformidade com a 
-                <a href="{% url 'usuarios:politica_privacidade' %}" target="_blank">Política de Privacidade</a> e 
-                <a href="{% url 'usuarios:termos_uso' %}" target="_blank">Termos de Uso</a>.
+                <a href="{% url 'usuarios:politica_privacidade' %}" target="_blank" class="lgpd-link">
+                    Política de Privacidade
+                </a> e 
+                <a href="{% url 'usuarios:termos_uso' %}" target="_blank" class="lgpd-link">
+                    Termos de Uso
+                </a>.
             </p>
             <p class="lgpd-consent-popup__footer">
                 Seus dados são utilizados estritamente para autenticação, segurança, auditoria e 
@@ -18,13 +22,23 @@
             </p>
         </div>
         
-        <div class="lgpd-consent-popup__actions">
-            <button id="lgpd-btn-aceitar" class="auth-btn auth-btn--primary" data-tipo="tratamento_dados" data-versao="{{ versao_ativa.versao|default:'1.0' }}">
+        <!-- Container flex para garantir que os filhos tenham o mesmo tamanho -->
+        <div class="lgpd-consent-popup__actions" style="display: flex; gap: 12px; width: 100%; margin-top: 16px;">
+            
+            <!-- Botão Aceitar: Forçado a ocupar 50% do espaço (flex: 1) -->
+            <button id="lgpd-btn-aceitar" class="auth-btn auth-btn--primary" data-tipo="tratamento_dados" data-versao="{{ versao_ativa.versao|default:'1.0' }}" style="flex: 1; width: 100%;">
                 Aceitar e Continuar
             </button>
-            <button id="lgpd-btn-recusar" class="auth-btn auth-btn--outline" onclick="window.location.href='{% url 'usuarios:logout' %}'">
-                Recusar e Sair
-            </button>
+            
+            <!-- Formulário de Recusar: Também forçado a ocupar 50% do espaço -->
+            <form id="form-recusar" action="{% url 'usuarios:logout' %}" method="POST" style="flex: 1; width: 100%; margin: 0;">
+                {% csrf_token %}
+                <!-- Botão interno também com width 100% para preencher o form -->
+                <button type="submit" class="auth-btn auth-btn--outline" style="width: 100%; text-decoration: none;">
+                    Recusar e Sair
+                </button>
+            </form>
+            
         </div>
     </div>
 </div>
