@@ -1,3 +1,6 @@
+import ipaddress
+
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -28,3 +31,18 @@ class Exigir2FAMiddleware:
             reverse('usuarios:termos_uso'),
             reverse('usuarios:registrar_consentimento'),
         }
+
+# não vazar o ip do usuário pro render
+class IPClienteMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        cabecalho = getattr(settings, 'IP_CLIENTE_CABECALHO', None)
+        if cabecalho:
+            valor = request.META.get(cabecalho, '').strip()
+            try:
+                request.META['REMOTE_ADDR'] = str(ipaddress.ip_address(valor))
+            except ValueError:
+                pass
+        return self.get_response(request)

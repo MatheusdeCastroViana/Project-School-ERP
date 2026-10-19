@@ -6,6 +6,7 @@ from django.core.exceptions import FieldError
 from django.db import connection
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from config.criptografia import ErroDecifragem, decifrar
 from config.test_criptografia import chaves, gerar_chave
@@ -147,6 +148,7 @@ class FluxoDoisFatoresComChaveCifradaTests(TestCase):
         config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
         sessao = self.client.session
         sessao["usuario_pendente_2fa"] = self.usuario.pk
+        sessao["usuario_pendente_2fa_em"] = timezone.now().timestamp()
         sessao.save()
         resposta = self.client.post(
             reverse("usuarios:verificar_2fa"),
@@ -159,6 +161,7 @@ class FluxoDoisFatoresComChaveCifradaTests(TestCase):
         config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
         sessao = self.client.session
         sessao["usuario_pendente_2fa"] = self.usuario.pk
+        sessao["usuario_pendente_2fa_em"] = timezone.now().timestamp()
         sessao.save()
         resposta = self.client.post(
             reverse("usuarios:verificar_2fa"),
@@ -166,3 +169,61 @@ class FluxoDoisFatoresComChaveCifradaTests(TestCase):
         )
         self.assertEqual(resposta.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    def _iniciar_2fa_pendente(self, segundos_atras=0):
+        sessao = self.client.session
+        sessao["usuario_pendente_2fa"] = self.usuario.pk
+        sessao["usuario_pendente_2fa_em"] = timezone.now().timestamp() - segundos_atras
+        sessao.save()
+
+    def test_cinco_codigos_invalidos_bloqueiam_a_conta(self):
+        config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self._iniciar_2fa_pendente()
+        invalido = gerar_codigo_invalido(config.chave_secreta)
+        for _ in range(4):
+            resposta = self.client.post(reverse("usuarios:verificar_2fa"), {"token": invalido})
+            self.assertEqual(resposta.status_code, 200)
+        resposta = self.client.post(reverse("usuarios:verificar_2fa"), {"token": invalido})
+        self.assertEqual(resposta.status_code, 302)
+        self.usuario.refresh_from_db()
+        self.assertIsNotNone(self.usuario.bloqueado_ate)
+        self.assertGreater(self.usuario.bloqueado_ate, timezone.now())
+        self.assertNotIn("usuario_pendente_2fa", self.client.session)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_codigo_valido_nao_autentica_com_conta_bloqueada(self):
+        config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self.usuario.bloqueado_ate = timezone.now() + timezone.timedelta(minutes=10)
+        self.usuario.save()
+        self._iniciar_2fa_pendente()
+        resposta = self.client.post(
+            reverse("usuarios:verificar_2fa"),
+            {"token": pyotp.TOTP(config.chave_secreta).now()},
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_sessao_pendente_expirada_nao_autentica(self):
+        config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self._iniciar_2fa_pendente(segundos_atras=10 * 60)
+        resposta = self.client.post(
+            reverse("usuarios:verificar_2fa"),
+            {"token": pyotp.TOTP(config.chave_secreta).now()},
+        )
+        self.assertEqual(resposta.status_code, 302)
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertNotIn("usuario_pendente_2fa", self.client.session)
+
+    def test_codigo_valido_zera_o_contador_de_falhas(self):
+        config = Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self._iniciar_2fa_pendente()
+        invalido = gerar_codigo_invalido(config.chave_secreta)
+        for _ in range(3):
+            self.client.post(reverse("usuarios:verificar_2fa"), {"token": invalido})
+        self.client.post(
+            reverse("usuarios:verificar_2fa"),
+            {"token": pyotp.TOTP(config.chave_secreta).now()},
+        )
+        config.refresh_from_db()
+        self.assertEqual(config.tentativas_falhas, 0)
+        self.assertIn("_auth_user_id", self.client.session)

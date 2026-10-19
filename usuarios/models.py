@@ -75,11 +75,14 @@ class LogAuditoria(models.Model):
         ('2fa_verificacao_sucesso', 'Verificação 2FA - Sucesso'),
         ('2fa_verificacao_falha', 'Verificação 2FA - Falha'),
         ('2fa_desativacao', 'Desativação 2FA'),
+        ('2fa_bloqueio', 'Bloqueio 2FA'),
+        ('2fa_sessao_expirada', 'Sessão 2FA Expirada'),
         ('recuperacao_senha_solicitacao', 'Recuperação de Senha - Solicitação'),
         ('recuperacao_senha_sucesso', 'Recuperação de Senha - Sucesso'),
         ('recuperacao_senha_falha', 'Recuperação de Senha - Falha'),
         ('exclusao_dados', 'Exclusão de Dados'),
         ('consentimento_lgpd', 'Consentimento LGPD'),
+        ('exportacao_dados', 'Exportação de Dados'),
         ('outro', 'Outro'),
     ]
     

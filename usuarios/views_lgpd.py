@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 
 from .audit import (
     registrar_consentimento,
+    registrar_exportacao_dados,
     registrar_solicitacao_exclusao,
 )
 from funcionarios.mascaras import mascarar_cpf, mascarar_telefone
@@ -84,6 +85,19 @@ def consultar_dados(request):
 def exportar_dados(request):
     dados = obter_dados_pessoais(request.user)
     conteudo = json.dumps(dados, default=str, ensure_ascii=False, indent=2)
+
+    grupos_exportados = ['conta']
+    if dados['funcionario']:
+        grupos_exportados.append('funcionario')
+    if dados['jornadas']:
+        grupos_exportados.append('jornadas')
+
+    registrar_exportacao_dados(
+        usuario=request.user,
+        grupos_exportados=grupos_exportados,
+        formato='json',
+        ip_address=request.META.get('REMOTE_ADDR'),
+    )
 
     resposta = HttpResponse(conteudo, content_type='application/json')
     resposta['Content-Disposition'] = 'attachment; filename="meus_dados.json"'

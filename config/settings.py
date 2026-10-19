@@ -36,6 +36,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'usuarios.middleware.IPClienteMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -90,12 +91,14 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
 ]
 
+# Bloqueio de força bruta
 LOGIN_MAX_TENTATIVAS = 5
 LOGIN_BLOQUEIO_MINUTOS = 15
+TWOFA_MAX_TENTATIVAS = 5
+TWOFA_PENDENTE_MINUTOS = 5
 
 AUTHENTICATION_BACKENDS = [
     'usuarios.backends.UsuarioBackend', 
-    'allauth.account.auth_backends.AuthenticationBackend',  
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -137,9 +140,6 @@ EMAIL_TIMEOUT = 10
 
 # LOGS DE AUDITORIA
 
-LOGS_DIR = BASE_DIR / 'logs'
-LOGS_DIR.mkdir(exist_ok=True)
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -150,12 +150,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file_seguranca': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_DIR / 'auditoria_seguranca.log',
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -164,7 +158,7 @@ LOGGING = {
     },
     'loggers': {
         'auditoria_seguranca': {
-            'handlers': ['file_seguranca', 'console'], 
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
@@ -187,6 +181,7 @@ if not DEBUG:
     # Redireciona todas as requisições HTTP para HTTPS automaticamente
     SECURE_SSL_REDIRECT = True
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    IP_CLIENTE_CABECALHO = 'HTTP_TRUE_CLIENT_IP'
 
     # HSTS (HTTP Strict Transport Security)
     # Informa ao navegador que o site só deve ser acessado via HTTPS por um período de 1 ano (31536000 segundos)
@@ -203,6 +198,7 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = 'same-origin'
 else:
     # Configurações para o nosso ambiente de desenvolvimento
+    IP_CLIENTE_CABECALHO = None
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False

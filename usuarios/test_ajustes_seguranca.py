@@ -65,8 +65,17 @@ class DoisFatoresObrigatorioTests(AjustesDeSegurancaBase):
 
     def test_sem_2fa_tela_de_ativacao_e_logout_continuam_acessiveis(self):
         self.assertEqual(self.client.get(reverse("usuarios:ativar_2fa")).status_code, 200)
-        resposta = self.client.get(reverse("usuarios:logout"))
+        resposta = self.client.post(reverse("usuarios:logout"))
         self.assertRedirects(resposta, reverse("account_login"), fetch_redirect_response=False)
+
+    def test_logout_por_get_nao_e_permitido_e_mantem_a_sessao(self):
+        resposta = self.client.get(reverse("usuarios:logout"))
+        self.assertEqual(resposta.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
+
+    def test_logout_por_post_encerra_a_sessao(self):
+        self.client.post(reverse("usuarios:logout"))
+        self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_com_2fa_ativo_o_acesso_e_liberado(self):
         Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
