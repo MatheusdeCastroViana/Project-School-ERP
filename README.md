@@ -2,90 +2,142 @@
 
 Sistema web para gestão integrada de escolas profissionalizantes e de formação complementar.
 
+## 🌐 Acessar o sistema
+
+Acesse a versão online: [Project School ERP](https://seu-projeto.onrender.com)
+
 ## Status do Projeto
-Este projeto está em desenvolvimento ativo como parte de um Projeto Integrador. Atualmente, o módulo de **Autenticação e Segurança** está completo e em conformidade com os requisitos de segurança da informação, incluindo 2FA, proteção contra força bruta e logs de auditoria.
+
+Projeto desenvolvido como Projeto Integrador de Políticas de Segurança da Informação. O módulo de **Autenticação e Segurança** está implementado e inclui:
+
+- hash de senha com Argon2id;
+- 2FA (TOTP) obrigatório para todos os usuários, com bloqueio por tentativas inválidas;
+- proteção contra força bruta no login;
+- recuperação de senha com token de uso único e envio por e-mail;
+- criptografia de dados sensíveis em repouso;
+- HTTPS/HSTS e cookies seguros em produção;
+- conformidade com a LGPD (consentimento, consulta, exportação e exclusão de dados);
+- auditoria em banco de dados com registros imutáveis;
+- autorização por setor.
+
+A documentação técnica de cada requisito está na pasta [`docs/`](docs/).
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/autenticacao.md`](docs/autenticacao.md) | Hash, 2FA, sessão, logout e força bruta |
+| [`docs/recuperacao_senha.md`](docs/recuperacao_senha.md) | Recuperação de senha |
+| [`docs/criptografia.md`](docs/criptografia.md) | Criptografia em repouso, chaves e índice cego |
+| [`docs/https_tls.md`](docs/https_tls.md) | HTTPS/TLS e bloqueio de conexões inseguras |
+| [`docs/lgpd.md`](docs/lgpd.md) | Conformidade com a LGPD |
+| [`docs/lgpd/inventario_dados.md`](docs/lgpd/inventario_dados.md) | Inventário de dados pessoais |
+| [`docs/auditoria_logs.md`](docs/auditoria_logs.md) | Auditoria e logs |
+| [`docs/evidencias/`](docs/evidencias/) | Prints e saídas de testes |
 
 ## Stack Tecnológica
 
-A aplicação é desenvolvida utilizando Python como linguagem principal e Django como framework web. O banco de dados utilizado é o PostgreSQL.
+A aplicação é desenvolvida em Python com o framework Django e usa PostgreSQL como banco de dados.
 
 | Categoria | Tecnologia | Versão |
 | :--- | :--- | :--- |
 | Linguagem de programação | Python | 3.14.6 |
 | Framework web | Django | 6.1 |
 | Banco de dados | PostgreSQL | 18.6 |
-| Autenticação | `django-allauth` + `pyotp` | 65.19.1 + 2.10.0 |
+| Autenticação | `django-allauth` | 65.19.1 |
+| Segundo fator (TOTP) | `django-otp` + `pyotp` + `qrcode` | 1.7.0 + 2.10.0 + 8.2 |
+| Hash de senha | `argon2-cffi` | 25.1.0 |
+| Criptografia em repouso | `cryptography` (Fernet) | 50.0.2 |
 | Variáveis de ambiente | `python-decouple` | 3.8 |
+| Arquivos estáticos | `whitenoise` | 6.12.0 |
+| Servidor de produção | `gunicorn` | 26.0.0 |
+| Envio de e-mail | `django-anymail[resend]` | 10.3 |
 
 ## Arquitetura da Aplicação
 
-O sistema utiliza a arquitetura **MVT (Model, View, Template)**, padrão do framework Django. Essa arquitetura organiza a aplicação em responsabilidades separadas, facilitando a manutenção, a evolução e a organização do código.
+O sistema usa a arquitetura **MVT (Model, View, Template)** do Django:
 
-- **Model:** Representam os dados e as regras de persistência. Definem as entidades, campos, relacionamentos e comportamentos no PostgreSQL.
-- **View:** Processam as requisições, aplicam regras de negócio, consultam/alteram Models e encaminham dados aos Templates. Também gerenciam permissões e validações de segurança.
-- **Template:** Responsáveis pela apresentação (HTML, formulários, tabelas). Exibem apenas funcionalidades compatíveis com o perfil do usuário, sem substituir as validações de backend.
+- **Model:** entidades, campos, relacionamentos e regras de persistência no PostgreSQL.
+- **View:** processa as requisições, aplica regras de negócio, consulta e altera os Models e encaminha dados aos Templates. Também aplica as permissões e validações de segurança.
+- **Template:** apresentação (HTML, formulários, tabelas). Exibe apenas as funcionalidades compatíveis com o perfil do usuário, sem substituir as validações do backend.
 
 ## Organização por Aplicações (Apps)
 
-O sistema é dividido em aplicações independentes, seguindo a organização recomendada pelo Django. 
-
-### Estrutura Atual Implementada:
 ```text
 Project-School-ERP/
 ├── manage.py
-├── config/                 # Configurações centrais do projeto (settings, urls, wsgi)
-│   ├── templates/          # Templates globais (ex: allauth customizado)
-├── usuarios/               # App de autenticação, usuários, 2FA e auditoria
-├── funcionarios/           # App de gestão de funcionários (vinculado ao usuário)
-├── static/                 # Arquivos estáticos (CSS, JS, Imagens)
-├── logs/                   # Logs de auditoria de segurança (gerado automaticamente)
-├── .env                    # Variáveis de ambiente (não versionado)
+├── config/                 # Configurações centrais (settings, urls, criptografia, campos cifrados)
+│   └── templates/          # Templates globais (allauth e admin customizados)
+├── usuarios/               # Autenticação, 2FA, recuperação de senha, LGPD e auditoria
+├── funcionarios/           # Setores, cargos, funcionários e jornada (dados cifrados)
+├── dashboard/              # Painéis por setor
+├── static/                 # Arquivos estáticos (CSS, JS)
+├── docs/                   # Documentação técnica e evidências
+├── build.sh                # Script de build para a hospedagem
 ├── .env.example            # Exemplo de variáveis de ambiente
 └── requirements.txt        # Dependências do projeto
 ```
-# Princípios de organização
 
-Cada app deverá concentrar Models, Views, URLs, formulários, arquivos administrativos, testes e demais componentes relacionados à sua responsabilidade. O objetivo é evitar a concentração de todo o código em um único módulo.
+### Princípios de organização
 
-Os relacionamentos entre os apps serão realizados por meio dos Models e das regras de negócio definidas no sistema. As configurações gerais do projeto, como banco de dados, URLs principais e configurações do Django, permanecerão em um módulo central de configuração.
+Cada app concentra Models, Views, URLs, formulários, administração, testes e demais componentes da sua responsabilidade, evitando concentrar o código em um único módulo. Os apps se relacionam por meio dos Models. As configurações gerais ficam em `config/`.
 
-A arquitetura deverá manter separação entre apresentação, processamento das requisições e persistência dos dados, respeitando o padrão MVT do Django.
-
-## Para rodar o projeto
+## Para rodar o projeto localmente
 
 1. Clone o repositório:
 ```bash
-   git clone https://github.com/MatheusdeCastroViana/Project-School-ERP.git
-   cd Project-School-ERP
+git clone https://github.com/MatheusdeCastroViana/Project-School-ERP.git
+cd Project-School-ERP
 ```
 
 2. Crie e ative o ambiente virtual:
 ```bash
-   python -m venv venv
-   venv\Scripts\activate      # Windows
-   source venv/bin/activate   # Linux/Mac
+python -m venv venv
+venv\Scripts\activate      # Windows
+source venv/bin/activate   # Linux/Mac
 ```
 
 3. Instale as dependências:
 ```bash
-   pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-4. Configure as variáveis de ambiente:
-   Copie o `.env.example` para `.env` e preencha com suas credenciais locais do PostgreSQL.
+4. Configure as variáveis de ambiente. Copie o `.env.example` para `.env`:
 ```bash
-   copy .env.example .env    # Windows
-   cp .env.example .env      # Linux/Mac
+copy .env.example .env    # Windows
+cp .env.example .env      # Linux/Mac
 ```
+Preencha no `.env`:
+- as credenciais do PostgreSQL local (`DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`);
+- `SECRET_KEY`;
+- `FIELD_ENCRYPTION_KEYS` e `BLIND_INDEX_KEY`, obrigatórias: sem elas o sistema não consegue ler nem gravar CPF, telefone e chave do 2FA. Os comandos para gerá-las estão no `.env.example`;
+- as variáveis de e-mail (`EMAIL_BACKEND` e as demais). Para ver o e-mail de recuperação de senha no terminal, use `django.core.mail.backends.console.EmailBackend`.
 
-5. Certifique-se de que o banco de dados existe no seu PostgreSQL local (nome, usuário e senha compatíveis com o que você colocou no `.env`).
+5. Certifique-se de que o banco de dados existe no PostgreSQL local, com nome, usuário e senha iguais aos do `.env`.
 
 6. Aplique as migrações:
 ```bash
-   python manage.py migrate
+python manage.py migrate
 ```
 
-7. Rode o servidor:
+7. Crie o primeiro usuário administrador. O cadastro público é fechado, então os demais usuários são criados pelo painel `/admin/`:
 ```bash
-   python manage.py runserver
+python manage.py createsuperuser
 ```
+
+8. Rode o servidor:
+```bash
+python manage.py runserver
+```
+
+No primeiro login o sistema exige a configuração do 2FA com um aplicativo autenticador.
+
+## Testes
+
+```bash
+python manage.py test
+```
+
+## Implantação
+
+O script `build.sh` instala as dependências, coleta os arquivos estáticos e aplica as migrações. Em produção, defina `DEBUG=False`, `ALLOWED_HOSTS` e as variáveis de ambiente descritas acima no painel da hospedagem. Com `DEBUG=False` o sistema ativa o redirecionamento para HTTPS, o HSTS e os cookies seguros (ver `docs/https_tls.md`).

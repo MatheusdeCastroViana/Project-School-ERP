@@ -1,142 +1,118 @@
 # Documentação — Segurança de Transporte (HTTPS/TLS)
 
-**Projeto:** ERP Escola Profissionalizante  
-**Autores:** Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana  
-**Versão do Documento de Requisitos:** 1.1  
-**Data da implementação:** 13 de outubro de 2026  
-**Entrega:** Projeto Integrador - Criptografia e Comunicação Segura
+**Projeto:** ERP Escola Profissionalizante
+**Autores:** Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana
+**Versão do Documento:** 1.1
+**Entrega:** Projeto Integrador — Criptografia e Comunicação Segura
 
 ---
 
 ## Introdução
 
-A segurança de transporte é um pilar fundamental da proteção de dados em aplicações web. Sem criptografia no canal de comunicação entre cliente e servidor, todas as informações trafegam em texto puro, incluindo credenciais de acesso, tokens de autenticação e dados pessoais sensíveis. Este documento descreve a estratégia de implementação de HTTPS/TLS no sistema ERP Escola Profissionalizante, atendendo aos requisitos de segurança de transporte e conformidade com a LGPD.
+Sem criptografia no canal entre cliente e servidor, credenciais, códigos 2FA, tokens e dados pessoais trafegam em texto puro. Este documento descreve como o ERP Escola Profissionalizante protege o transporte com HTTPS/TLS e atende aos requisitos RS 3.1, 3.2 e 3.3.
+
+O comportamento depende do ambiente, controlado pela variável `DEBUG`: em desenvolvimento (`DEBUG=True`) as proteções de transporte ficam desligadas para permitir testes em `http://127.0.0.1:8000/`; em produção (`DEBUG=False`) todas ficam ativas.
 
 ---
 
-## Evidência de Tráfego Cifrado
+## Comunicação protegida por TLS/HTTPS (RS 3.1)
 
-### O que é HTTPS/TLS?
+**Requisito:** A comunicação entre cliente e servidor deverá ser protegida por TLS, utilizando HTTPS em ambientes de acesso real.
 
-HTTPS (HTTP Secure) é a versão segura do protocolo HTTP, que utiliza TLS (Transport Layer Security) para criptografar a comunicação entre o navegador do usuário e o servidor web. O TLS garante:
+### Decisão adotada
 
-1. **Confidencialidade:** Os dados trafegados são criptografados, impedindo que terceiros interceptem e leiam o conteúdo.
-2. **Integridade:** Qualquer alteração nos dados durante o transporte é detectada, prevenindo ataques de homem-no-meio (Man-in-the-Middle).
-3. **Autenticidade:** O certificado SSL/TLS verifica a identidade do servidor, garantindo que o usuário está se comunicando com o servidor legítimo.
+A aplicação é publicada na plataforma Render, que termina o TLS no seu proxy e entrega a requisição à aplicação Django por HTTP interno, acrescentando o cabeçalho `X-Forwarded-Proto`. O Django é configurado para reconhecer esse cabeçalho:
 
-### Implementação no Django
+```python
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+```
 
-O Django oferece suporte nativo para HTTPS através de configurações no `settings.py`. No ERP Escolar, implementamos as seguintes medidas:
+Sem essa configuração, o Django consideraria toda requisição insegura e entraria em laço de redirecionamento.
 
-#### 1. Redirecionamento Forçado de HTTP para HTTPS
+### Justificativa técnica
+
+TLS garante confidencialidade (conteúdo cifrado), integridade (alteração em trânsito é detectada) e autenticidade (o certificado comprova a identidade do servidor). A LGPD (art. 46) exige medidas técnicas de segurança para proteger dados pessoais, o que inclui o transporte.
+
+### Evidências
+
+- **Configuração:** `config/settings.py` (bloco `if not DEBUG`)
+- **Verificação do certificado:** `openssl s_client -connect <dominio>:443 -servername <dominio>` mostra a cadeia de certificados, a versão do TLS e o cifrador negociado; o cadeado do navegador exibe o emissor e a validade.
+
+---
+
+## Bloqueio de conexões não seguras (RS 3.2)
+
+**Requisito:** O sistema deverá bloquear ou redirecionar conexões não seguras para uma conexão protegida, conforme o ambiente de implantação.
+
+### Decisão adotada
+
+Em produção, `config/settings.py` ativa:
 
 ```python
 SECURE_SSL_REDIRECT = True
-```
-
-Esta configuração garante que qualquer requisição recebida via HTTP seja automaticamente redirecionada para HTTPS, com código de status HTTP 301 (Moved Permanently). Isso impede que usuários acessem o sistema por conexões não seguras.
-
-#### 2. HSTS (HTTP Strict Transport Security)
-
-```python
-SECURE_HSTS_SECONDS = 31536000  # 1 ano
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-```
-
-O HSTS é um cabeçalho de resposta HTTP que instrui o navegador a sempre acessar o site via HTTPS, mesmo que o usuário digite http:// na barra de endereços. Isso previne ataques de downgrade SSL, onde um atacante força a conexão a usar HTTP.
-
-- SECURE_HSTS_SECONDS = 31536000: O navegador deve lembrar de usar HTTPS por 1 ano.
-- SECURE_HSTS_INCLUDE_SUBDOMAINS = True: Aplica HSTS a todos os subdomínios.
-- SECURE_HSTS_PRELOAD = True: Permite que o domínio seja incluído na lista de preload do HSTS, mantida pelos principais navegadores.
-
-#### 3. Cookies Seguros
-
-```python
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-```
-
-Essas configurações garantem que os cookies de sessão (sessionid) e CSRF (csrftoken) só sejam enviados em conexões HTTPS. Isso previne o roubo de sessão via ataques de interceptação de tráfego.
-
-#### 4. Proteções Adicionais
-
-```python
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
 SECURE_REFERRER_POLICY = 'same-origin'
 ```
 
-- SECURE_CONTENT_TYPE_NOSNIFF: Impede que o navegador interprete arquivos como um tipo MIME diferente do declarado, prevenindo ataques de drive-by download.
-- SECURE_BROWSER_XSS_FILTER: Ativa o filtro XSS nativo do navegador.
-- SECURE_REFERRER_POLICY = 'same-origin': Controla qual informação de referer é enviada, protegendo a privacidade do usuário.
+- **`SECURE_SSL_REDIRECT`:** toda requisição HTTP recebe redirecionamento permanente (301) para HTTPS.
+- **HSTS:** o cabeçalho `Strict-Transport-Security` instrui o navegador a usar sempre HTTPS pelo prazo configurado (padrão de 1 ano, ajustável por variável de ambiente). Previne ataques de downgrade. A inclusão na lista de preload dos navegadores depende de o domínio ser registrado nessa lista; a diretiva fica habilitada para quando o sistema for publicado em domínio próprio.
+- **Cookies seguros:** `sessionid` e `csrftoken` só são enviados em conexões HTTPS.
+- **`SECURE_CONTENT_TYPE_NOSNIFF`:** impede o navegador de reinterpretar o tipo MIME declarado.
+- **`SECURE_REFERRER_POLICY = 'same-origin'`:** o endereço de origem só é enviado a páginas do mesmo site.
 
-## Bloqueio de Conexões Não Seguras
+O bloqueio é feito em duas camadas: a aplicação (redirecionamento e HSTS, acima) e a infraestrutura (a plataforma de hospedagem expõe o serviço por HTTPS e encaminha a porta 80 para a 443).
 
-### Estratégia de Implementação
+### Justificativa técnica
 
-O bloqueio de conexões não seguras é implementado em duas camadas:
+O redirecionamento sozinho deixa a primeira requisição HTTP exposta; o HSTS fecha essa janela nas visitas seguintes. Cookies com a flag `Secure` impedem o sequestro de sessão por interceptação em redes abertas.
 
-#### Camada 1: Aplicação (Django)
+### Evidências
 
-No ambiente de produção (DEBUG = False), o Django redireciona automaticamente todas as requisições HTTP para HTTPS. Se um usuário tentar acessar http://erp.escola.com.br/login/, será imediatamente redirecionado para https://erp.escola.com.br/login/.
+- **Configuração:** `config/settings.py`
+- **Teste de redirecionamento:** `curl -I http://<dominio>/` deve responder `301` com `Location: https://<dominio>/`.
+- **Teste do HSTS:** `curl -I https://<dominio>/` deve incluir o cabeçalho `Strict-Transport-Security`.
 
-#### Camada 2: Infraestrutura (Servidor Web)
+---
 
-Em um ambiente de produção real, o bloqueio é reforçado pelo servidor web, que:
+## Tráfego cifrado verificável (RS 3.3)
 
-1. Escuta apenas na porta 443 (HTTPS) para tráfego externo.
-2. Redireciona a porta 80 (HTTP) para HTTPS com código 301.
-3. Possui certificado SSL/TLS válido.
+**Requisito:** O sistema deverá utilizar tráfego cifrado, verificável por inspeção do certificado ou captura controlada.
 
-# Comunicação Protegida por TLS/HTTPS
+### Decisão adotada
 
-## Fluxo de Comunicação Segura
+A verificação é feita por inspeção do certificado (procedimento da seção RS 3.1) e por captura controlada do tráfego com as ferramentas de desenvolvedor do navegador (aba Rede e aba Segurança) ou com um analisador de pacotes. Na captura, o conteúdo das requisições de login e de 2FA aparece cifrado, sem exposição de credenciais ou dados pessoais.
 
-O fluxo de comunicação protegida no ERP Escolar segue estas etapas:
+### Fluxo da comunicação segura
 
-1. **Handshake TLS:** Quando o usuário acessa o sistema, o navegador e o servidor negociam os parâmetros de criptografia e trocam chaves públicas.
-2. **Criptografia Simétrica:** Após o handshake, toda a comunicação é criptografada usando uma chave simétrica compartilhada, que é mais rápida que a criptografia assimétrica.
-3. **Transmissão de Dados:** Credenciais, tokens 2FA, dados pessoais e todas as requisições/respostas trafegam criptografados.
-4. **Validação de Certificado:** O navegador verifica se o certificado SSL/TLS é válido, emitido por uma autoridade certificadora confiável e não expirado.
+1. **Handshake TLS:** navegador e servidor negociam os parâmetros de criptografia e o navegador valida o certificado (emissor confiável, validade e nome do servidor).
+2. **Criptografia simétrica:** concluído o handshake, todo o tráfego é cifrado com uma chave simétrica de sessão.
+3. **Transmissão:** credenciais, códigos 2FA, tokens de recuperação e dados pessoais trafegam cifrados.
 
-## Justificativa Técnica
+---
 
-### Por que HTTPS é obrigatório?
+## IP do cliente atrás do proxy
 
-1. **Proteção de Credenciais:** Sem HTTPS, senhas e tokens 2FA trafegam em texto puro, podendo ser interceptados por qualquer pessoa na mesma rede (ex: Wi-Fi público).
-2. **Conformidade com LGPD:** O Art. 46 da LGPD exige que o controlador adote medidas de segurança para proteger os dados pessoais, incluindo a criptografia no transporte.
-3. **Prevenção de Ataques Man-in-the-Middle:** HTTPS previne que atacantes interceptem e modifiquem requisições, como injetar scripts maliciosos ou alterar dados de formulários.
-4. **Confiança do Usuário:** Navegadores modernos exibem avisos de "Não Seguro" para sites sem HTTPS, o que prejudica a credibilidade do sistema.
+Atrás do proxy da hospedagem, o IP da conexão é o do proxy. Para que os logs de auditoria registrem o IP real, o `IPClienteMiddleware` copia o cabeçalho `IP_CLIENTE_CABECALHO` (`HTTP_TRUE_CLIENT_IP`) para `REMOTE_ADDR`, aceitando apenas valores que sejam endereços IP válidos. Em desenvolvimento o middleware fica desligado. Detalhes em `auditoria_logs.md`.
 
-### Por que HSTS é necessário?
+---
 
-O HSTS complementa o HTTPS ao impedir que o usuário acesse o site via HTTP, mesmo que digite manualmente. Sem HSTS, um atacante em uma rede pública poderia interceptar a primeira requisição HTTP (antes do redirecionamento) e realizar um ataque de downgrade.
-
-### Por que cookies seguros são importantes?
-
-Cookies de sessão e CSRF contêm informações sensíveis que, se interceptados, permitem que um atacante sequestre a sessão do usuário ou realize ataques CSRF. A flag Secure garante que esses cookies só sejam enviados em conexões HTTPS.
-
-## Evidências de Implementação
-
-### Em Ambiente de Desenvolvimento
-
-Em desenvolvimento (DEBUG = True), as configurações de HTTPS estão desativadas para facilitar os testes locais. O sistema roda em http://127.0.0.1:8000/ sem criptografia.
-
-### Em Ambiente de Produção
-
-Será definido após a realização do deploy.
+## Histórico de alterações
 
 | Versão | Data | Alteração | Responsável |
 |---|---|---|---|
 | 1.0 | 13/10/2026 | Criação do documento, cobrindo os requisitos de criptografia e comunicação segura | Matheus de Castro Viana |
+| 1.1 | 18/10/2026 | Revisão: configuração real de produção (proxy, HSTS configurável), remoção de opção inexistente, verificação por certificado e captura | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
 
-#  Referências
+## Referências
 
 - Django Documentation — Security: https://docs.djangoproject.com/en/6.1/topics/security/
 - OWASP Transport Layer Protection Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html
 - Mozilla SSL Configuration Generator: https://ssl-config.mozilla.org/
-- Let's Encrypt Documentation: https://letsencrypt.org/docs/
-- RFC 5246 — The Transport Layer Security (TLS) Protocol Version 1.2
 - RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3
+- RFC 6797 — HTTP Strict Transport Security (HSTS)
 - Lei nº 13.709/2018 (LGPD) — Art. 46 (Medidas de Segurança)
