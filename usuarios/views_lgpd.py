@@ -8,8 +8,11 @@ from django.views.decorators.http import require_POST
 
 from .audit import (
     registrar_consentimento,
+    registrar_exportacao_dados,
     registrar_solicitacao_exclusao,
 )
+from funcionarios.mascaras import mascarar_cpf, mascarar_telefone
+
 from .models_2fa import Configuracao2FA
 
 CAMPOS_PROTEGIDOS = [
@@ -72,6 +75,9 @@ def obter_dados_pessoais(usuario):
 @login_required
 def consultar_dados(request):
     dados = obter_dados_pessoais(request.user)
+    if dados['funcionario']:
+        dados['funcionario']['cpf_mascarado'] = mascarar_cpf(dados['funcionario']['cpf'])
+        dados['funcionario']['telefone_mascarado'] = mascarar_telefone(dados['funcionario']['telefone'])
     return render(request, 'usuarios/consultar_dados.html', {'dados': dados})
 
 
@@ -79,6 +85,19 @@ def consultar_dados(request):
 def exportar_dados(request):
     dados = obter_dados_pessoais(request.user)
     conteudo = json.dumps(dados, default=str, ensure_ascii=False, indent=2)
+
+    grupos_exportados = ['conta']
+    if dados['funcionario']:
+        grupos_exportados.append('funcionario')
+    if dados['jornadas']:
+        grupos_exportados.append('jornadas')
+
+    registrar_exportacao_dados(
+        usuario=request.user,
+        grupos_exportados=grupos_exportados,
+        formato='json',
+        ip_address=request.META.get('REMOTE_ADDR'),
+    )
 
     resposta = HttpResponse(conteudo, content_type='application/json')
     resposta['Content-Disposition'] = 'attachment; filename="meus_dados.json"'
@@ -149,8 +168,8 @@ def registrar_consentimento_view(request):
     
     except json.JSONDecodeError:
         return JsonResponse({'error': 'JSON inválido'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    except Exception:
+        return JsonResponse({'error': 'Erro interno'}, status=500)
 
 
 def politica_privacidade(request):

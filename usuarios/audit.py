@@ -163,3 +163,22 @@ def registrar_consentimento(usuario, tipo, versao, aceitou, ip_address=None):
         ip_address=ip_address,
         detalhes={'tipo': tipo, 'versao': versao, 'aceitou': bool(aceitou)},
     )
+
+
+def registrar_exportacao_dados(usuario, grupos_exportados, formato, ip_address=None):
+    mensagem = (
+        f"Exportação de dados pessoais | Usuário: {usuario.email} | "
+        f"Grupos: {', '.join(grupos_exportados) if grupos_exportados else 'nenhum'} | "
+        f"Formato: {formato} | "
+        f"IP: {ip_address or 'N/A'}"
+    )
+
+    _gravar_no_arquivo(mensagem, True)
+    _gravar_no_banco(
+        usuario=usuario,
+        tipo_evento='exportacao_dados',
+        sucesso=True,
+        mensagem=mensagem,
+        ip_address=ip_address,
+        detalhes={'grupos_exportados': list(grupos_exportados or []), 'formato': formato},
+    )

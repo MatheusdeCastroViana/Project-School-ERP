@@ -20,14 +20,7 @@
         <!-- Título -->
         <h1 class="auth-title">{% trans "Entrar" %}</h1>
 
-        <!-- Texto de cadastro -->
         {% if not SOCIALACCOUNT_ONLY %}
-            <p class="auth-text">
-                {% blocktranslate with link=signup_url %}
-                    Se você ainda não criou uma conta, por favor, <a href="{{ link }}">cadastre-se</a> primeiro.
-                {% endblocktranslate %}
-            </p>
-
             <!-- Formulário de Login -->
             <form method="post" action="{% url 'account_login' %}" class="auth-form">
                 {% csrf_token %}

@@ -5,6 +5,8 @@ from datetime import timedelta
 import secrets
 import hashlib
 
+def hash_token(token_cru):
+    return hashlib.sha256(token_cru.encode()).hexdigest()
 
 class TokenRecuperacaoSenha(models.Model):    
     usuario = models.ForeignKey(
@@ -57,12 +59,18 @@ class TokenRecuperacaoSenha(models.Model):
             models.Index(fields=['usuario', 'expira_em']),
         ]
 
-    def save(self, *args, **kwargs):
-        if not self.token:
-            # Gera string aleatória de 64 caracteres e faz hash SHA256
-            string_aleatoria = secrets.token_urlsafe(64)
-            self.token = hashlib.sha256(string_aleatoria.encode()).hexdigest()
+    @classmethod
+    def gerar(cls, usuario, ip_solicitacao=None, user_agent=''):
+        token_cru = secrets.token_urlsafe(48)
+        objeto = cls.objects.create(
+            usuario=usuario,
+            token=hash_token(token_cru),
+            ip_solicitacao=ip_solicitacao,
+            user_agent=user_agent,
+        )
+        return objeto, token_cru
 
+    def save(self, *args, **kwargs):
         if not self.expira_em:
             horas = getattr(settings, 'TOKEN_RECUPERACAO_EXPIRACAO_HORAS', 24)
             self.expira_em = timezone.now() + timedelta(hours=horas)
@@ -85,4 +93,4 @@ class TokenRecuperacaoSenha(models.Model):
 
     def __str__(self):
         status = 'Utilizado' if self.utilizado else 'Válido'
-        return f"Token {self.token[:8]}... - {self.usuario.email} ({status})"
+        return f"Token de {self.usuario.email} ({status})"

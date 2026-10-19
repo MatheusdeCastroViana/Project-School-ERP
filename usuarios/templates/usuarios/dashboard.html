@@ -38,18 +38,14 @@
             
             <p class="auth-text" style="text-align: left; font-size: 13px; margin-bottom: 16px;">
                 {% if tem_2fa %}
-                    {% trans "Sua conta está protegida por 2FA. Para desativar, utilize o botão abaixo." %}
+                    {% trans "Sua conta está protegida por 2FA. Ele é obrigatório para todos os usuários." %}
                 {% else %}
-                    {% trans "Recomendamos ativar o 2FA para proteger sua conta contra acessos não autorizados." %}
+                    {% trans "O 2FA é obrigatório. Ative-o para liberar o acesso ao sistema." %}
                 {% endif %}
             </p>
 
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                {% if tem_2fa %}
-                    <a href="{% url 'usuarios:desativar_2fa' %}" class="auth-btn auth-btn--outline" style="flex: 1; text-align: center;">
-                        {% trans "Desativar 2FA" %}
-                    </a>
-                {% else %}
+                {% if not tem_2fa %}
                     <a href="{% url 'usuarios:ativar_2fa' %}" class="auth-btn auth-btn--primary" style="flex: 1; text-align: center;">
                         {% trans "Ativar 2FA" %}
                     </a>
