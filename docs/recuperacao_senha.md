@@ -1,10 +1,9 @@
-# Documentação — Recuperação de Senha (RS 2.1 a RS 2.5)
+# Documentação — Recuperação de Senha (RS 2.1 a RS 2.7)
 
-**Projeto:** ERP Escola Profissionalizante  
-**Autores:** Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana  
-**Versão do Documento de Requisitos:** 1.1  
-**Data da implementação:** 05 de setembro de 2026  
-**Entrega:** Projeto Integrador - Recuperação de Senha  
+**Projeto:** ERP Escola Profissionalizante
+**Autores:** Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana
+**Versão do Documento:** 1.1
+**Entrega:** Projeto Integrador — Recuperação de Senha
 
 ---
 
@@ -14,36 +13,36 @@
 
 ### Decisão adotada
 
-Implementado um fluxo completo de recuperação de senha independente do django-allauth, composto por três etapas:
+Foi implementado um fluxo próprio, independente do django-allauth, em três etapas:
 
-1. **Solicitação** (/usuarios/recuperar-senha/): O usuário informa o e-mail cadastrado. Se o e-mail existir no sistema, um token criptográfico é gerado e o link de recuperação é enviado (em ambiente de desenvolvimento, exibido no console do servidor, em produção, será enviado por e-mail).
+1. **Solicitação** (`/usuarios/recuperar-senha/`): o usuário informa o e-mail cadastrado. Se o e-mail existir, é gerado um token e um e-mail com o link de recuperação é enviado.
+2. **Validação e redefinição** (`/usuarios/recuperar-senha/<token>/`): o link valida o token e apresenta o formulário de nova senha, que aplica os validadores de senha do Django (`AUTH_PASSWORD_VALIDATORS`).
+3. **Confirmação:** com a nova senha definida, o token é invalidado e o usuário é levado à tela de login.
 
-2. **Validação e redefinição** (/usuarios/recuperar-senha/<token>/): O usuário acessa o link recebido, que valida o token e apresenta um formulário para definição da nova senha.
+O e-mail é enviado com `send_mail` pelo backend definido em `EMAIL_BACKEND` (variável de ambiente). Em desenvolvimento pode ser o backend de console ou o SMTP do Mailtrap; em produção, o envio é feito pelo serviço configurado em `settings.py` (django-anymail). O corpo do e-mail usa os templates `usuarios/email/recuperacao_senha.html` e `recuperacao_senha.txt` e informa o horário de expiração do link. Quando `DEBUG` está ativo, o link também é impresso no console do servidor para facilitar os testes.
 
-3. **Confirmação**: Após a nova senha ser definida com sucesso, o token é invalidado e o usuário é redirecionado para a tela de login.
+Arquivos do fluxo:
 
-O fluxo foi implementado em arquivos dedicados para manter separação de responsabilidades:
-- **usuarios/models_recuperacao.py:** Modelo TokenRecuperacaoSenha` que armazena os tokens.
-- **usuarios/forms_recuperacao.py:** Formulários SolicitarRecuperacaoForm e NovaSenhaForm.
-- **usuarios/views_recuperacao.py:** Views solicitar_recuperacao e confirmar_recuperacao.
-- **usuarios/templates/usuarios/solicitar_recuperacao.html e confirmar_recuperacao.html:** Interfaces do usuário.
-- **Link de acesso adicionado na tela de login (config/templates/account/login.html)** com o texto "Esqueceu a senha?".
+- `usuarios/models_recuperacao.py`: modelo `TokenRecuperacaoSenha`.
+- `usuarios/forms_recuperacao.py`: `SolicitarRecuperacaoForm` e `NovaSenhaForm`.
+- `usuarios/views_recuperacao.py`: `solicitar_recuperacao` e `confirmar_recuperacao`.
+- `usuarios/templates/usuarios/solicitar_recuperacao.html` e `confirmar_recuperacao.html`: interfaces.
+- `config/templates/account/login.html`: link "Esqueceu a senha?" na tela de login.
 
 ### Justificativa técnica
 
-Optamos por implementar um fluxo próprio em vez de utilizar o mecanismo de recuperação do django-allauth por dois motivos principais:
+O fluxo próprio foi adotado porque:
 
-1. **Controle explícito sobre a expiração temporal do token**: O allauth utiliza um mecanismo baseado no timestamp do último login do usuário, o que não atende diretamente ao requisito RS 2.3 (tempo de expiração definido e explícito). Nossa implementação armazena o campo expira_em diretamente no banco, permitindo validação.
-
-2. **Rastreabilidade e auditoria**: O modelo TokenRecuperacaoSenha registra metadados como ip_solicitacao, user_agent, criado_em e utilizado_em, atendendo aos requisitos de auditoria (RS 2.6 e RS 2.7) e permitindo análise em caso de incidente.
-
-3. **Prevenção de enumeração de usuários**: A view de solicitação sempre retorna a mesma mensagem genérica ("Se o e-mail informado estiver cadastrado no sistema, você receberá um link..."), independentemente de o e-mail existir ou não no banco. Isso impede que um atacante mapeie quais e-mails estão cadastrados no sistema.
+1. **Expiração explícita:** o mecanismo do allauth baseia-se no timestamp do último login, o que não atende diretamente ao RS 2.3. O modelo próprio guarda `expira_em` no banco e valida a expiração no servidor.
+2. **Rastreabilidade:** o modelo registra `ip_solicitacao`, `user_agent`, `criado_em` e `utilizado_em`, apoiando os requisitos RS 2.6 e RS 2.7 e a análise de incidentes.
+3. **Prevenção de enumeração de usuários:** a solicitação sempre mostra a mesma mensagem genérica ("Se o e-mail informado estiver cadastrado no sistema, você receberá um link..."), exista ou não o e-mail.
 
 ### Evidências
 
-- **Arquivos**: usuarios/models_recuperacao.py, usuarios/forms_recuperacao.py, usuarios/views_recuperacao.py, config/templates/account/login.html
-- **Print da tela de solicitação** ![Print da tela de solicitação](evidencias/enviar_link_de_recuperacao.png): formulário com campo de e-mail e botão de envio
-- **Print do terminal** ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png): bloco destacado exibindo o link de recuperação gerado, contendo o token e o horário de expiração
+- **Arquivos:** `usuarios/models_recuperacao.py`, `usuarios/forms_recuperacao.py`, `usuarios/views_recuperacao.py`, `config/templates/account/login.html`
+- **Tela de solicitação:** ![Print da tela de solicitação](evidencias/enviar_link_de_recuperação.png)
+- **Link gerado no ambiente de desenvolvimento:** ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png)
+- **Testes automatizados:** `usuarios/tests.py::test_solicitacao_gera_token_para_email_existente` e `test_solicitacao_com_email_inexistente_nao_gera_token`
 
 ---
 
@@ -53,157 +52,142 @@ Optamos por implementar um fluxo próprio em vez de utilizar o mecanismo de recu
 
 ### Decisão adotada
 
-O token é gerado no método save() do modelo TokenRecuperacaoSenha utilizando a combinação de duas técnicas:
+O token é gerado pelo método de classe `TokenRecuperacaoSenha.gerar()`, que combina duas técnicas:
 
-1. **Geração de entropia**: secrets.token_urlsafe(64) com função da biblioteca padrão secrets do Python, que utiliza os.urandom() como fonte de entropia. Esta função é alimentada pelo gerador de números aleatórios do sistema operacional (CryptGenRandom no Windows), que é considerado criptograficamente seguro.
-
-2. **Hash SHA-256**: A string aleatória de 64 caracteres é submetida ao algoritmo SHA-256 (hashlib.sha256), produzindo um token final de 64 caracteres hexadecimais. O hash é armazenado no banco em vez da string original.
-
-
-O campo token possui unique=True e db_index=True no modelo, garantindo unicidade e eficiência de busca.
+1. **Geração:** `secrets.token_urlsafe(48)`, da biblioteca padrão do Python, que usa o gerador aleatório criptograficamente seguro do sistema operacional. O resultado tem 48 bytes (384 bits) de entropia, codificados em 64 caracteres URL-safe. Essa é a string enviada no link.
+2. **Armazenamento:** apenas o hash SHA-256 do token (64 caracteres hexadecimais) é gravado no banco, no campo `token` (`unique=True`, `db_index=True`). Na validação, o token recebido na URL é submetido ao mesmo hash para localizar o registro.
 
 ### Justificativa técnica
 
-A combinação secrets + SHA-256 atende a três objetivos de segurança:
-
-- Não previsibilidade: secrets.token_urlsafe() é projetado especificamente para geração de tokens seguros, em contraste com random (que é previsível). A entropia de 64 bytes (512 bits) antes do hash torna o espaço de busca impraticável para ataques de força bruta.
-- Proteção em caso de comprometimento do banco: Mesmo que um atacante obtenha acesso de leitura ao banco de dados, ele verá apenas o hash SHA-256 do token, não o valor original. Como SHA-256 é uma função unidirecional, é computacionalmente inviável reverter o hash para obter a string original.
-- Tamanho adequado: 64 caracteres hexadecimais (256 bits de entropia efetiva).
+- **Não previsibilidade:** `secrets` foi projetado para tokens de segurança, ao contrário de `random`. Com 384 bits de entropia, a busca exaustiva é inviável.
+- **Proteção contra vazamento do banco:** quem lê o banco vê apenas o hash. Sem o token original, não é possível montar o link de redefinição.
+- **Unicidade e busca eficiente:** garantidas por `unique=True` e `db_index=True`.
 
 ### Evidências
 
-- **Arquivo:** usuarios/models_recuperacao.py (método save())
-- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** exemplo de token gerado com 64 caracteres hexadecimais
-- **Inspeção do banco:** campo token da tabela usuarios_tokenrecuperacaosenha contendo apenas o hash, nunca a string original
+- **Arquivo:** `usuarios/models_recuperacao.py` (`gerar()` e `hash_token()`)
+- **Teste automatizado:** `usuarios/tests.py::test_token_e_armazenado_apenas_como_hash`
+- **Link gerado:** ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png)
+- **Inspeção do banco:** o campo `token` da tabela `usuarios_tokenrecuperacaosenha` contém somente o hash.
 
-## RS 2.3 - Token com tempo de expiração
+---
+
+## RS 2.3 — Token com tempo de expiração
 
 **Requisito:** O token de recuperação deverá possuir tempo de expiração definido.
 
 ### Decisão adotada
 
-O tempo de expiração é definido automaticamente no momento da criação do token, no método save().
+O `save()` do modelo define `expira_em` na criação como o instante atual somado a `TOKEN_RECUPERACAO_EXPIRACAO_HORAS` (24 horas, em `config/settings.py`).
 
-O valor padrão de 24 horas foi escolhido como equilíbrio entre usabilidade (tempo suficiente para o usuário receber o e-mail e concluir o processo) e segurança (janela de ataque limitada).
+A validação ocorre em dois pontos:
 
-A validação da expiração ocorre em dois pontos:
+- `TokenRecuperacaoSenha.is_valido()`: retorna `False` se o token foi utilizado ou se `expira_em` já passou.
+- `confirmar_recuperacao`: chama `is_valido()` antes de permitir a redefinição. Se o token é inválido, o usuário é enviado à tela de solicitação com mensagem genérica.
 
-- Método is_valido() do modelo: Retorna False se expira_em < timezone.now() ou se o token já foi utilizado.
-- View confirmar_recuperacao: Antes de permitir a redefinição da senha, chama token_obj.is_valido(). Se o token estiver expirado, o usuário é redirecionado para a tela de solicitação com uma mensagem genérica de erro.
-
-Além disso, a tela de redefinição de senha exibe ao usuário o horário exato de expiração do token ({{ expira_em|date:"d/m/Y H:i" }}), aumentando a transparência.
+A tela de redefinição e o e-mail exibem o horário exato de expiração.
 
 ### Justificativa técnica
 
-O valor de 24 horas está alinhado com as recomendações do OWASP, que sugere janelas de expiração curtas (tipicamente entre 1 e 24 horas) para tokens de recuperação. Valores maiores aumentam o risco de um token interceptado ser utilizado por um atacante; valores menores prejudicam a usabilidade, especialmente se o e-mail demorar a chegar. A expiração é verificada no lado do servidor (não apenas no cliente), garantindo que mesmo que o usuário tente manipular o horário local ou reutilizar um link antigo, o token será rejeitado.
+A janela de 24 horas equilibra usabilidade (tempo para o e-mail chegar e o usuário concluir) e segurança (janela de ataque limitada). A expiração é verificada no servidor, de modo que manipular o relógio do cliente não tem efeito.
 
 ### Evidências
 
-- **Arquivo:** usuarios/models_recuperacao.py (método save() e is_valido())
-- **Configuração:** config/settings.py (TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24)
-- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** campo "Expira em" exibindo o timestamp de expiração
-- **Print de token expirado ![Print de token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica de erro ao tentar usar token fora do prazo
+- **Arquivo:** `usuarios/models_recuperacao.py` (`save()` e `is_valido()`)
+- **Configuração:** `config/settings.py` (`TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24`)
+- **Teste automatizado:** `usuarios/tests.py::test_token_expirado_falha_e_loga`
+- **Token expirado:** ![Print de token expirado](evidencias/codigo_de_recuperacao_expirado.png)
 
-## RS 2.4 - Token invalidado após uso
+---
+
+## RS 2.4 — Token invalidado após uso
 
 **Requisito:** O token deverá ser invalidado imediatamente após o uso bem-sucedido.
 
 ### Decisão adotada
 
-Após a nova senha ser definida com sucesso, o método marcar_como_utilizado() é chamado.
+Depois de definir a nova senha, `confirmar_recuperacao`:
 
-A validação de uso ocorre no método is_valido(), que retorna False se self.utilizado == True. Isso impede que o mesmo token seja reutilizado, mesmo que ainda esteja dentro do prazo de expiração. 
+1. grava a nova senha com `set_password()`, zera `tentativas_login_falhas` e remove `bloqueado_ate`;
+2. chama `marcar_como_utilizado()`, que grava `utilizado = True` e `utilizado_em`;
+3. marca também como utilizados **todos os outros tokens ainda pendentes do mesmo usuário**;
+4. registra o sucesso na auditoria.
+
+`is_valido()` retorna `False` para qualquer token com `utilizado == True`, mesmo dentro do prazo.
 
 ### Justificativa técnica
 
-A invalidação imediata após o uso é uma prática essencial de segurança prevista na RN-09 ("Tokens de recuperação não poderão ser reutilizados após o uso ou após a expiração"). Sem essa proteção, um token interceptado (por exemplo, via log, e-mail comprometido ou histórico do navegador) poderia ser reutilizado por um atacante para redefinir a senha da vítima a qualquer momento dentro da janela de 24 horas. O registro do timestamp utilizado_em permite auditoria posterior: é possível identificar quando cada token foi consumido, o que auxilia na investigação de incidentes.
+Um token interceptado (por e-mail comprometido ou histórico do navegador) não pode ser reutilizado dentro da janela de 24 horas. Invalidar também os demais tokens pendentes impede que um link antigo, solicitado antes da troca, redefina a senha de novo. O campo `utilizado_em` permite identificar quando cada token foi consumido.
 
 ### Evidências
 
-- **Arquivo:** usuarios/models_recuperacao.py (método marcar_como_utilizado())
-- **View:** usuarios/views_recuperacao.py::confirmar_recuperacao (chamada após usuario.set_password())
+- **Arquivo:** `usuarios/models_recuperacao.py` (`marcar_como_utilizado()`)
+- **View:** `usuarios/views_recuperacao.py::confirmar_recuperacao`
+- **Teste automatizado:** `usuarios/tests.py::test_token_reutilizado_falha_e_loga`
 
-## RS 2.5 — Falha correta para token expirado
+---
+
+## RS 2.5 — Falha correta para token expirado, inválido, alterado ou já utilizado
 
 **Requisito:** O sistema deverá falhar corretamente quando o token estiver expirado, inválido, alterado ou já utilizado, sem revelar informações sensíveis.
 
 ### Decisão adotada
 
-A view confirmar_recuperacao trata todos os cenários de falha com a mesma mensagem genérica "Link de recuperação inválido ou expirado. Por favor, solicite um novo link." Os cenários cobertos são:
+`confirmar_recuperacao` trata todos os cenários de falha com a mesma mensagem: "Link de recuperação inválido ou expirado. Por favor, solicite um novo link." Os cenários cobertos são:
 
-- Token inexistente no banco: URL malformada ou token nunca gerado.
-- Token expirado: usuário demorou mais de 24 horas para usar o link.
-- Token já utilizado: tentativa de reutilização após redefinição bem-sucedida.
-- Token alterado/manipulado: URL modificada manualmente pelo usuário.
+- **Token inexistente:** URL malformada ou token nunca gerado.
+- **Token alterado:** URL modificada manualmente; o hash não corresponde a nenhum registro e cai no caso de token inexistente.
+- **Token expirado:** o prazo de 24 horas foi excedido.
+- **Token já utilizado:** tentativa de reutilização.
 
-Em todos os casos, o usuário é redirecionado para /usuarios/recuperar-senha/ com a mesma mensagem, sem revelar qual foi a causa específica da falha.
+Em todos os casos o usuário é redirecionado para `/usuarios/recuperar-senha/` com a mesma mensagem. A causa específica é registrada apenas no log de auditoria.
 
 ### Justificativa técnica
-A mensagem genérica é uma contramedida contra ataques de enumeração de tokens. Se o sistema informasse "token expirado" versus "token já utilizado" versus "token inexistente", um atacante poderia:
 
-- Testar tokens aleatórios e identificar quais existem no banco (reduzindo o espaço de busca).
-- Identificar tokens que foram usados recentemente (indicando contas ativas).
-- Mapear o tempo de expiração exato do sistema.
-
-Ao unificar todas as falhas em uma única mensagem, o sistema adere ao princípio de "fail-safe" (falhar de forma segura) e ao princípio de menor privilégio de informação, revelando apenas o necessário para o usuário legítimo prosseguir (solicitar um novo link). Essa abordagem está alinhada com as recomendações e atende a RN-10.
+Uma mensagem única impede que um atacante distinga token inexistente, expirado e utilizado, o que permitiria identificar tokens existentes, contas ativas e o prazo de expiração. Isso segue o princípio de falhar de forma segura, revelando ao usuário legítimo apenas o necessário para solicitar um novo link.
 
 ### Evidências
 
-- **Arquivo:** usuarios/views_recuperacao.py::confirmar_recuperacao
-- **Print de token expirado ![Print do token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica exibida ao usuário
+- **Arquivo:** `usuarios/views_recuperacao.py::confirmar_recuperacao`
+- **Testes automatizados:** `usuarios/tests.py::test_token_inexistente_loga_falha`, `test_token_expirado_falha_e_loga` e `test_token_reutilizado_falha_e_loga`
+- **Mensagem genérica:** ![Print do token expirado](evidencias/codigo_de_recuperacao_expirado.png)
 
-## Logs de recuperação de senha
+---
 
-Os logs de recuperação de senha foram implementados para atender aos requisitos **RS 2.6** (registro de solicitação sem expor segredos) e **RS 2.7** (registro de sucesso ou falha do processo), além da regra de negócio **RN-10** (credenciais, tokens completos e códigos 2FA não deverão ser registrados em logs).
+## RS 2.6 e RS 2.7 — Logs de recuperação de senha
 
-### Configuração de logging
+**Requisitos:**
+- **RS 2.6:** O sistema deverá registrar em log a solicitação de recuperação de senha, sem registrar a senha ou o token completo.
+- **RS 2.7:** O sistema deverá registrar o sucesso ou a falha do processo de recuperação de senha.
 
-O sistema utiliza o módulo `logging` do Python, configurado em `config/settings.py` com as seguintes características:
+### Decisão adotada
 
-- **Logger dedicado**: `auditoria_seguranca` (separado dos logs gerais do Django)
-- **Destino**: Arquivo `logs/auditoria_seguranca.log` e console (em desenvolvimento)
-- **Formato**: `{levelname} {asctime} {module} {message}` (timestamp, nível, módulo e mensagem)
-- **Nível mínimo**: `INFO` (registra eventos informativos e avisos)
+Os eventos são gravados por funções de `usuarios/audit.py`, que escrevem em dois destinos:
 
-### Funções para logs de recuperação de senha
+- a tabela `LogAuditoria` no PostgreSQL, consultável no Django Admin e protegida contra alteração e exclusão (ver `auditoria_logs.md`);
+- o logger `auditoria_seguranca`, com saída no console. Formato: `{levelname} {asctime} {module} {message}`, nível mínimo `INFO`. Eventos com `sucesso=False` são emitidos em nível `WARNING`.
 
 **1. `registrar_evento_recuperacao_senha(email, encontrado, ip_address)`**
-
-Registrada na solicitação inicial (quando o usuário informa o e-mail na tela de recuperação).
-
-Parâmetros capturados:
-- `email`: E-mail informado pelo usuário
-- `encontrado`: Booleano indicando se o usuário existe no banco
-- `ip_address`: Endereço IP de origem da solicitação
+Chamada na solicitação. Registra o e-mail informado, se o usuário foi encontrado e o IP de origem. Tipo de evento: `recuperacao_senha_solicitacao`. Quando o e-mail não existe, o registro é de falha (`WARNING`), o que permite identificar tentativas de enumeração (ver exemplo em `auditoria_logs.md`).
 
 **2. `registrar_resultado_recuperacao_senha(usuario, sucesso, motivo)`**
+Chamada na conclusão. Tipos de evento: `recuperacao_senha_sucesso` e `recuperacao_senha_falha`. Motivos registrados na falha:
 
-Registrada na conclusão do processo (sucesso ou falha na redefinição da senha).
-
-Parâmetros capturados:
-- `usuario`: Objeto do usuário (se identificado) ou `None`
-- `sucesso`: Booleano indicando se a redefinição foi bem-sucedida
-- `motivo`: String opcional com o motivo da falha (quando aplicável)
-
-Motivos registrados:
-- `"token inexistente"`: Token não encontrado no banco
-- `"token expirado"`: Token fora do prazo de validade
-- `"token já utilizado"`: Token já consumido em tentativa anterior
+- `token inexistente`
+- `token expirado`
+- `token já utilizado`
 
 ### Segurança dos logs
 
-Os logs **nunca registram** informações sensíveis:
-- Token completo
-- Senha (antiga ou nova)
-- Apenas e-mail, IP, status de sucesso/falha e motivo genérico da falha
+Os registros nunca contêm o token (completo ou parcial), a senha antiga ou a nova. Contêm apenas e-mail, IP, resultado e o motivo genérico da falha.
 
 ### Evidências
 
-- **Arquivo de configuração**: `config/settings.py` (seção `LOGGING`)
-- **Arquivo de auditoria**: `usuarios/audit.py` (funções de registro)
-- **Testes automatizados**: Rodar `python manage.py test usuarios`
-- **Print dos logs gerados**: ![Print dos logs gerados pelo teste automatizado](evidencias/logs_recuperacao_senha.jpg)
+- **Código:** `usuarios/audit.py`, `usuarios/views_recuperacao.py`
+- **Testes automatizados:** `usuarios/tests.py` (`test_log_registrado_na_solicitacao_email_encontrado`, `test_log_registrado_na_solicitacao_email_nao_encontrado`, `test_token_valido_permite_trocar_senha_e_loga_sucesso`, `test_token_expirado_falha_e_loga`, `test_token_reutilizado_falha_e_loga` e `test_token_inexistente_loga_falha`). Execução: `python manage.py test usuarios`
+- **Logs gerados:** ![Print dos logs gerados pelo teste automatizado](evidencias/logs_recuperacao_senha.jpg)
 
+---
 
 ## Histórico de alterações
 
@@ -211,3 +195,4 @@ Os logs **nunca registram** informações sensíveis:
 |---|---|---|---|
 | 1.0 | 05/09/2026 | Criação do documento, cobrindo os requisitos de recuperação de senha | Matheus de Castro Viana |
 | 1.1 | 06/09/2026 | Adição da documentação relativa aos logs de recuperação de senha | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 18/10/2026 | Revisão: token com `token_urlsafe(48)` gerado em `gerar()`, armazenamento somente do hash, envio real de e-mail, invalidação dos demais tokens pendentes, logs em banco e seções RS 2.6 e RS 2.7 | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
