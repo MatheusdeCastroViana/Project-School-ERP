@@ -4,8 +4,10 @@ from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.http import JsonResponse
 
 from .models_2fa import Configuracao2FA
+from .models import ConsentimentoLGPD 
 
 
 class Exigir2FAMiddleware:
@@ -32,7 +34,7 @@ class Exigir2FAMiddleware:
             reverse('usuarios:registrar_consentimento'),
         }
 
-# não vazar o ip do usuário pro render
+
 class IPClienteMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -45,4 +47,41 @@ class IPClienteMiddleware:
                 request.META['REMOTE_ADDR'] = str(ipaddress.ip_address(valor))
             except ValueError:
                 pass
+        return self.get_response(request)
+
+# MIDDLEWARE DE CONSENTIMENTO LGPD (Pós-Login)
+
+class ConsentimentoMiddleware:
+    """
+    Garante que o usuário logado tenha aceito os termos obrigatórios de tratamento de dados.
+    Se não, redireciona para a página de consentimento obrigatório, bloqueando o acesso ao sistema.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            # Rotas que NÃO devem ser bloqueadas, mesmo sem consentimento
+            rotas_liberadas = [
+                '/usuarios/consentir/',
+                '/usuarios/logout/',
+                '/accounts/logout/',
+                '/usuarios/api/consentimento/',
+                '/admin/', # Permite acesso ao admin para o superusuário configurar as versões
+            ]
+            
+            if not any(request.path.startswith(rota) for rota in rotas_liberadas):
+                # Verifica se o usuário já aceitou o tratamento de dados
+                tem_consentimento = ConsentimentoLGPD.verificar_consentimento_ativo(
+                    request.user, 'tratamento_dados'
+                )
+                
+                if not tem_consentimento:
+                    # Se for uma requisição API/AJAX, retorna erro 403 em vez de redirecionar HTML
+                    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.path.startswith('/api/'):
+                        return JsonResponse({'error': 'Consentimento LGPD obrigatório pendente'}, status=403)
+                    
+                    # Para navegação normal, redireciona para a página de interbloqueio
+                    return redirect('usuarios:consentir_obrigatorio')
+
         return self.get_response(request)
