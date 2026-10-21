@@ -137,7 +137,3 @@ No primeiro login o sistema exige a configuração do 2FA com um aplicativo aute
 ```bash
 python manage.py test
 ```
-
-## Implantação
-
-O script `build.sh` instala as dependências, coleta os arquivos estáticos e aplica as migrações. Em produção, defina `DEBUG=False`, `ALLOWED_HOSTS` e as variáveis de ambiente descritas acima no painel da hospedagem. Com `DEBUG=False` o sistema ativa o redirecionamento para HTTPS, o HSTS e os cookies seguros (ver `docs/https_tls.md`).
