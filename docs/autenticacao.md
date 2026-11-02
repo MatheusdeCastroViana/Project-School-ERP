@@ -182,13 +182,20 @@ Optamos por expiração por inatividade, e não por um tempo fixo desde o login,
 **Requisito:** O logout deverá invalidar a sessão ativa e impedir sua reutilização.
 
 **Decisão adotada**
-Implementada uma view customizada de logout (`usuarios/views_2fa.py::logout_usuario`), acionada pelo botão "Sair do Sistema" no dashboard (`usuarios/templates/usuarios/dashboard.html`), via um `<form method="post">` com `{% csrf_token %}` apontando pra `usuarios:logout`. A view é decorada com `@login_required`, registra o evento de logout no log de auditoria (`registrar_evento_autenticacao`, em `usuarios/audit.py`) **antes** de destruir a sessão, e só então chama `django.contrib.auth.logout(request)` que invalida a sessão do lado do servidor (apaga os dados da sessão no banco/cache e expira o cookie `sessionid`) antes de redirecionar pra tela de login.
+A view `usuarios/views_2fa.py::logout_usuario` é decorada com `@require_POST` e `@login_required`. É acionada pelo botão "Sair do Sistema", um `<form method="post">` com `{% csrf_token %}`. A view chama `django.contrib.auth.logout()`, que apaga a sessão no servidor e expira o cookie `sessionid`. Requisições GET para o logout são recusadas e a sessão é mantida.
+
+O registro do logout na auditoria não fica mais na view. Um receiver do sinal `user_logged_out` do Django (`usuarios/signals.py::registrar_logout`, conectado em `usuarios/apps.py`) grava o evento sempre que `logout()` é chamado, seja pela view do sistema, pela rota `/accounts/logout/` do allauth ou pelo `/admin/logout/`. O sinal é emitido antes de a sessão ser destruída, então o e-mail do usuário continua disponível para o log.
 
 **Justificativa técnica**
-Registrar o evento de auditoria antes de chamar `logout()` é necessário porque, depois do `logout()`, `request.user` deixa de estar associado ao usuário que estava logado (vira `AnonymousUser`) se a ordem fosse invertida, o log ficaria sem o e-mail do usuário que saiu. Usar POST (em vez de GET, como em implementações mais antigas/ingênuas de logout) evita que o logout aconteça sem intenção do usuário via prefetch de link, crawler ou CSRF de terceiros já que o form exige o token CSRF.
+As sessões ficam na tabela de sessões do banco, e o cookie `sessionid` é apenas a chave que aponta para uma linha dessa tabela. O `logout()` apaga a linha, então reenviar o cookie antigo aponta para uma chave inexistente: a requisição chega como anônima e é redirecionada ao login. Centralizar o registro no sinal garante que nenhum caminho de logout fique sem log e evita duplicar a lógica. Usar POST com CSRF evita logout involuntário por prefetch, crawler ou requisição forjada de terceiros.
 
 **Evidência**
-- Reproduzido de forma isolada com o `Client` de testes do Django, simulando o fluxo completo (login forçado → GET no dashboard → POST no logout → nova tentativa de GET no dashboard):
+- Testes automatizados (reutilização de cookie): `usuarios/test_ajustes_seguranca.py::LogoutInvalidaSessaoTests`, que loga, guarda o `sessionid`, faz logout, reenvia o cookie em um cliente novo e confere o redirecionamento ao login e a remoção da sessão do banco, tanto pela view do sistema quanto pela rota do allauth.
+- Testes automatizados (auditoria): `usuarios/test_ajustes_seguranca.py::LogoutRegistraAuditoriaTests`, que confere um único log de logout por caminho e nenhum log sem usuário autenticado.
+- Testes anteriores: `test_logout_por_post_encerra_a_sessao` e `test_logout_por_get_nao_e_permitido_e_mantem_a_sessao`
+- Comando: `python manage.py test usuarios.test_ajustes_seguranca.LogoutInvalidaSessaoTests usuarios.test_ajustes_seguranca.LogoutRegistraAuditoriaTests -v 2`
+- ![Print dos testes de logout e reutilização de cookie](evidencias/teste_logout_reuso_cookie.png)
+- Código-fonte: `usuarios/views_2fa.py::logout_usuario`, `usuarios/signals.py::registrar_logout`, `usuarios/apps.py`
 
 ---
 
@@ -214,3 +221,4 @@ Optamos por bloqueio temporário em vez de permanente porque um bloqueio permane
 | 1.0 | 29/08/2026 | Criação do documento, cobrindo RS 1.1–1.12 para a primeira entrega. | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 30/08/2026 | Atualização das seções RS 1.5, 1.6 (2FA) e RS 1.10 (logout) | Marcos Antônio Ferreira de Araújo |
 | 1.2 | 30/08/2026 | Inserção da documentação do 2FA | Matheus Viana |
+| 1.4 | 02/11/2026 | Registro de logout migrado para o sinal `user_logged_out` (cobre view do sistema, allauth e admin) e testes de reutilização de cookie | Marcos Antônio Ferreira de Araújo |
