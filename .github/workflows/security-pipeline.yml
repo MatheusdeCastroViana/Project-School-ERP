@@ -1,4 +1,3 @@
-
 name: School ERP - Security Pipeline
 
 on:
@@ -28,67 +27,51 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    env:
-      DB_NAME: erp_test
-      DB_USER: erp_ci
-      DB_PASSWORD: ci_test_only_password
-      DB_HOST: 127.0.0.1
-      DB_PORT: 5432
-
-      DEBUG: "True"
-      ALLOWED_HOSTS: "localhost,127.0.0.1"
-
-      EMAIL_BACKEND: django.core.mail.backends.console.EmailBackend
-      EMAIL_HOST: localhost
-      EMAIL_PORT: 2525
-      EMAIL_USE_TLS: "False"
-      EMAIL_HOST_USER: ""
-      EMAIL_HOST_PASSWORD: ""
-      DEFAULT_FROM_EMAIL: ci@example.invalid
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Generate temporary test keys
+      - name: Build Docker image
+        run: docker build -t school-erp-ci .
+
+      - name: Generate temporary test environment
         run: |
-          python - <<'PY'
-          import os
+          docker run --rm school-erp-ci python -c "
           import secrets
           from cryptography.fernet import Fernet
           from django.core.management.utils import get_random_secret_key
 
-          with open(os.environ["GITHUB_ENV"], "a") as env:
-              env.write(f"SECRET_KEY={get_random_secret_key()}\n")
-              env.write(f"FIELD_ENCRYPTION_KEYS={Fernet.generate_key().decode()}\n")
-              env.write(f"BLIND_INDEX_KEY={secrets.token_urlsafe(48)}\n")
-          PY
+          print('SECRET_KEY=' + get_random_secret_key())
+          print('FIELD_ENCRYPTION_KEYS=' + Fernet.generate_key().decode())
+          print('BLIND_INDEX_KEY=' + secrets.token_urlsafe(48))
+          " > "$RUNNER_TEMP/generated_keys"
 
-      - name: Build Docker image
-        run: |
-          docker build -t school-erp-ci .
+          {
+            echo "DB_NAME=erp_test"
+            echo "DB_USER=erp_ci"
+            echo "DB_PASSWORD=ci_test_only_password"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=5432"
+            echo "DEBUG=True"
+            echo "ALLOWED_HOSTS=localhost,127.0.0.1"
+            echo "EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend"
+            echo "EMAIL_HOST=localhost"
+            echo "EMAIL_PORT=2525"
+            echo "EMAIL_USE_TLS=False"
+            echo "EMAIL_HOST_USER="
+            echo "EMAIL_HOST_PASSWORD="
+            echo "DEFAULT_FROM_EMAIL=ci@example.invalid"
+            cat "$RUNNER_TEMP/generated_keys"
+          } > "$RUNNER_TEMP/ci.env"
+
+          chmod 600 "$RUNNER_TEMP/ci.env"
+          rm "$RUNNER_TEMP/generated_keys"
 
       - name: Django system check
         run: |
           docker run --rm \
             --network host \
-            -e SECRET_KEY \
-            -e FIELD_ENCRYPTION_KEYS \
-            -e BLIND_INDEX_KEY \
-            -e DB_NAME \
-            -e DB_USER \
-            -e DB_PASSWORD \
-            -e DB_HOST \
-            -e DB_PORT \
-            -e DEBUG \
-            -e ALLOWED_HOSTS \
-            -e EMAIL_BACKEND \
-            -e EMAIL_HOST \
-            -e EMAIL_PORT \
-            -e EMAIL_USE_TLS \
-            -e EMAIL_HOST_USER \
-            -e EMAIL_HOST_PASSWORD \
-            -e DEFAULT_FROM_EMAIL \
+            --env-file "$RUNNER_TEMP/ci.env" \
             school-erp-ci \
             python manage.py check --database default
 
@@ -96,23 +79,7 @@ jobs:
         run: |
           docker run --rm \
             --network host \
-            -e SECRET_KEY \
-            -e FIELD_ENCRYPTION_KEYS \
-            -e BLIND_INDEX_KEY \
-            -e DB_NAME \
-            -e DB_USER \
-            -e DB_PASSWORD \
-            -e DB_HOST \
-            -e DB_PORT \
-            -e DEBUG \
-            -e ALLOWED_HOSTS \
-            -e EMAIL_BACKEND \
-            -e EMAIL_HOST \
-            -e EMAIL_PORT \
-            -e EMAIL_USE_TLS \
-            -e EMAIL_HOST_USER \
-            -e EMAIL_HOST_PASSWORD \
-            -e DEFAULT_FROM_EMAIL \
+            --env-file "$RUNNER_TEMP/ci.env" \
             school-erp-ci \
             python manage.py migrate --noinput
 
@@ -121,29 +88,17 @@ jobs:
           docker run -d \
             --name school-erp-app \
             --network host \
-            -e SECRET_KEY \
-            -e FIELD_ENCRYPTION_KEYS \
-            -e BLIND_INDEX_KEY \
-            -e DB_NAME \
-            -e DB_USER \
-            -e DB_PASSWORD \
-            -e DB_HOST \
-            -e DB_PORT \
-            -e DEBUG \
-            -e ALLOWED_HOSTS \
-            -e EMAIL_BACKEND \
-            -e EMAIL_HOST \
-            -e EMAIL_PORT \
-            -e EMAIL_USE_TLS \
-            -e EMAIL_HOST_USER \
-            -e EMAIL_HOST_PASSWORD \
-            -e DEFAULT_FROM_EMAIL \
+            --env-file "$RUNNER_TEMP/ci.env" \
             school-erp-ci
 
       - name: Wait for Django
         run: |
           for i in $(seq 1 30); do
-            if curl --fail http://127.0.0.1:8000/; then
+            STATUS=$(curl -sS -o /dev/null \
+              -w "%{http_code}" \
+              http://127.0.0.1:8000/ || true)
+
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
               echo "Django is responding."
               exit 0
             fi
@@ -159,3 +114,4 @@ jobs:
         if: always()
         run: |
           docker rm -f school-erp-app || true
+          rm -f "$RUNNER_TEMP/ci.env"
