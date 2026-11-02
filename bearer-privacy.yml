@@ -1,0 +1,12 @@
+report:
+  format: json
+  output: bearer-privacy.json
+  report: privacy
+  severity: critical
+
+scan:
+  scanner:
+    - sast
+    - secrets
+  disable-domain-resolution: true
+  quiet: false

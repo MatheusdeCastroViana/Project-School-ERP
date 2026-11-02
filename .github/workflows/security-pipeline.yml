@@ -35,7 +35,7 @@ jobs:
 
       # BEARER - SECURITY SCAN
 
-      - name: Bearer - Critical security findings
+      - name: Bearer - Security analysis
         uses: bearer/bearer-action@v2
         with:
           scanner: sast,secrets
@@ -44,11 +44,12 @@ jobs:
           output: bearer-security.json
 
       # BEARER - PRIVACY SCAN
-
+      
       - name: Bearer - Privacy analysis
         uses: bearer/bearer-action@v2
         with:
-          config-file: .github/bearer-privacy.yml
+          config-file: bearer-privacy.yml
+
 
       # POSTGRESQL / DJANGO
 
