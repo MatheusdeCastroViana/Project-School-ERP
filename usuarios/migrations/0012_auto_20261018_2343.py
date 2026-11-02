@@ -1,8 +1,7 @@
 from django.db import migrations
 
-
 def criar_versao_consentimento_inicial(apps, schema_editor):
-
+    # Usamos apps.get_model para garantir compatibilidade com o estado da migração
     VersaoTextoConsentimento = apps.get_model('usuarios', 'VersaoTextoConsentimento')
     
     VersaoTextoConsentimento.objects.get_or_create(
@@ -14,9 +13,7 @@ def criar_versao_consentimento_inicial(apps, schema_editor):
         }
     )
 
-
 class Migration(migrations.Migration):
-    
     dependencies = [
         ('usuarios', '0011_versaotextoconsentimento_consentimentolgpd'),
     ]
