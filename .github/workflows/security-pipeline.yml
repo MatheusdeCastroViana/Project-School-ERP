@@ -11,6 +11,7 @@ jobs:
   security:
     name: Build and Security validation
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -44,14 +45,13 @@ jobs:
           output: bearer-security.json
 
       # BEARER - PRIVACY SCAN
-      
+
       - name: Bearer - Privacy analysis
         uses: bearer/bearer-action@v2
         with:
           config-file: bearer-privacy.yml
 
-
-      # POSTGRESQL / DJANGO
+      # DOCKER / DJANGO
 
       - name: Build Docker image
         run: docker build -t school-erp-ci .
@@ -131,6 +131,90 @@ jobs:
           echo "Django did not start successfully."
           docker logs school-erp-app
           exit 1
+
+      # OWASP ZAP - DAST
+
+      - name: Prepare ZAP reports directory
+        run: mkdir -p zap-reports
+
+      - name: OWASP ZAP Full Scan
+        id: zap_scan
+        run: |
+          docker run --rm \
+            --network host \
+            -v "$PWD/zap-reports:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py \
+              -t http://127.0.0.1:8000 \
+              -m 5 \
+              -T 5 \
+              -I \
+              -J zap-report.json \
+              -r zap-report.html
+
+      # BLOCK PIPELINE ON HIGH-RISK FINDINGS
+
+      - name: Block on high-risk ZAP findings
+        id: zap_gate
+        if: always() && steps.zap_scan.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          report_path = Path("zap-reports/zap-report.json")
+
+          if not report_path.exists():
+              print("ERROR: ZAP JSON report was not generated.")
+              sys.exit(1)
+
+          with report_path.open(encoding="utf-8") as file:
+              report = json.load(file)
+
+          if "site" not in report:
+              print("ERROR: Unexpected ZAP report structure.")
+              sys.exit(1)
+
+          high_findings = []
+
+          for site in report.get("site", []):
+              for alert in site.get("alerts", []):
+                  if str(alert.get("riskcode", "")) == "3":
+                      high_findings.append({
+                          "name": alert.get("name", "Unknown"),
+                          "url": site.get("@name", "Unknown URL"),
+                          "risk": alert.get("riskdesc", "High")
+                      })
+
+          if high_findings:
+              print("\nHIGH-RISK vulnerabilities detected:\n")
+
+              for finding in high_findings:
+                  print(f"- {finding['name']}")
+                  print(f"  Risk: {finding['risk']}")
+                  print(f"  URL: {finding['url']}\n")
+
+              print("Pipeline blocked due to high-risk findings.")
+              sys.exit(1)
+
+          print("No high-risk ZAP findings detected.")
+          PY
+
+      # REPORTS
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-erp-security-reports
+          path: |
+            zap-reports/
+            bearer-security.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      # CLEANUP
 
       - name: Stop application
         if: always()
