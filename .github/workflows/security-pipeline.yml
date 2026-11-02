@@ -187,10 +187,14 @@ jobs:
               print("ERROR: ZAP JSON report was not generated.")
               sys.exit(1)
 
-          with report_path.open(encoding="utf-8") as file:
-              report = json.load(file)
+          try:
+              with report_path.open(encoding="utf-8") as file:
+                  report = json.load(file)
+          except (json.JSONDecodeError, OSError) as error:
+              print(f"ERROR: Could not read ZAP report: {error}")
+              sys.exit(1)
 
-          if "site" not in report:
+          if not isinstance(report.get("site"), list):
               print("ERROR: Unexpected ZAP report structure.")
               sys.exit(1)
 
