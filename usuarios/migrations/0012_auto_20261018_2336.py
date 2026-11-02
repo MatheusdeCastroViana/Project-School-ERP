@@ -15,7 +15,7 @@ def criar_versao_consentimento_inicial(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('usuarios', '0011_auto_20261018_2335'),
+        ('usuarios', '0011_versaotextoconsentimento_consentimentolgpd'),
     ]
 
     operations = [
