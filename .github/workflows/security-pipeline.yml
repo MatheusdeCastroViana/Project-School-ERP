@@ -135,7 +135,9 @@ jobs:
       # OWASP ZAP - DAST
 
       - name: Prepare ZAP reports directory
-        run: mkdir -p zap-reports
+        run: |
+          mkdir -p zap-reports
+          chmod 777 zap-reports
 
       - name: OWASP ZAP Full Scan
         id: zap_scan
