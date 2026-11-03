@@ -204,7 +204,9 @@ def registrar_evento_lgpd(usuario, evento, sucesso, ip_address=None, detalhes=No
     _gravar_no_arquivo(mensagem, sucesso)
     _gravar_no_banco(
         usuario=usuario,
-        tipo_evento='outro', 
+        # Revogação de consentimento fica no mesmo tipo dos aceites, para que a trilha
+        # de consentimento (aceite/recusa/revogação) seja consultável por um único filtro.
+        tipo_evento='consentimento_lgpd' if evento == 'revogacao_consentimento' else 'outro',
         sucesso=sucesso,
         mensagem=mensagem,
         ip_address=ip_address,
