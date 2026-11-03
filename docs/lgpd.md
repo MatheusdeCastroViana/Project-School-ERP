@@ -267,26 +267,57 @@ A exportação em JSON atende ao art. 18, V da LGPD (portabilidade dos dados), p
 
 ### Decisão adotada
 
-Implementada a view solicitar_exclusao (usuarios/views_lgpd.py) acessível via /usuarios/meus-dados/exclusao/, que permite ao usuário solicitar a exclusão de seus dados pessoais. A tela exibe explicitamente:
+Implementado o fluxo de solicitação de exclusão com aprovação da Gestão (RF 4.10), acessível via `/usuarios/meus-dados/exclusao/`. O fluxo funciona da seguinte forma:
 
-- **Dados que serão excluídos:** Telefone (único dado que pode ser excluído automaticamente)
-- **Dados que NÃO podem ser excluídos:** Nome, CPF, e-mail, senha, cargo, jornada (com justificativa para cada um)
+1. **O titular solicita:** na tela de exclusão, o titular clica em "Confirmar solicitação de exclusão". O sistema cria uma `SolicitacaoExclusao` com status **PENDENTE** e registra no log de auditoria. Nenhum dado é alterado neste passo.
+2. **A Gestão analisa:** no Django Admin (`/admin/usuarios/solicitacaoexclusao/`), a Gestão visualiza a fila de solicitações pendentes e pode:
+   - **Aprovar:** executa a anonimização/exclusão dos dados (veja o que anonimiza abaixo). A aprovação e a execução rodam dentro de um mesmo `transaction.atomic()`: se qualquer passo falhar, nada é gravado e a solicitação continua PENDENTE.
+   - **Recusar:** mantém todos os dados intactos, registra justificativa e quem decidiu. A recusa só é aceita com justificativa preenchida.
+3. **Execução (após aprovação):** a função `executar_exclusao()` roda dentro de `transaction.atomic()` e:
+   - Recusa a execução se o status não for `APROVADA` ou se já foi executada anteriormente.
+   - Anonimiza o **nome** do funcionário (troca por `Titular anonimizado #<id>`).
+   - Anonimiza o **CPF** (troca por valor não identificável, mantido cifrado) e o **cpf_indice** (recalculado com índice cego de valor não identificável, mantendo unicidade).
+   - Anonimiza o **telefone** (zera o campo).
+   - Marca o funcionário como **inativo** (`ativo = False`).
+   - Apaga as **jornadas de trabalho** vinculadas.
+   - Anonimiza o **e-mail** do usuário (troca por `anonimizado-<id>@invalido.local`).
+   - Torna a senha **inutilizável** (`set_unusable_password`).
+   - Marca o usuário como **inativo** (`is_active = False`).
+   - Invalida a **chave TOTP** (apaga `chave_secreta` e desativa `ativado`).
+   - Apaga os **tokens de recuperação de senha** (contêm IP e user-agent).
+   - Marca o `executado_em` na solicitação.
+   - Registra o evento no `LogAuditoria` (apenas IDs, sem CPF, telefone ou e-mail).
 
-Após a confirmação, o sistema:
+### O que fica retido (por obrigação legal / contratual)
+- **Nome e CPF** (`cpf` e `cpf_indice`): substituídos por valores não identificáveis, mas a linha do Funcionario é mantida por causa de FKs `PROTECT` e obrigações trabalhistas.
+- **LogAuditoria**: imutável por obrigação de segurança e rastreabilidade (LGPD art. 16).
+- **ConsentimentoLGPD**: prova de consentimento do titular (LGPD art. 8º, §2º).
+- **SolicitacaoExclusao**: prova do atendimento ao direito do titular (LGPD art. 18).
+- **Cargo/Setor**: não identificam a pessoa individualmente, são mantidos.
 
-- Remove o telefone do cadastro do funcionário (se existir)
-- Registra a solicitação no log de auditoria via registrar_solicitacao_exclusao
-- Exibe mensagem informando quais dados foram removidos e quais foram preservados
+### O que é anonimizado
+- Nome do funcionário
+- CPF e cpf_indice do funcionário
+- Telefone do funcionário
+- Jornadas de trabalho (apagadas)
+- E-mail da conta
+- Senha do usuário (tornada inutilizável)
+- Chave secreta TOTP (2FA)
+- Tokens de recuperação de senha
 
-### Justificativa técnica
-
-A exclusão parcial atende ao art. 18, VI da LGPD (eliminação dos dados pessoais tratados com o consentimento do titular), respeitando as exceções previstas no art. 16 (dados necessários para cumprimento de obrigação legal ou regulatória). A transparência sobre quais dados podem ou não ser excluídos evita frustração do titular e demonstra conformidade com a legislação.
+### Registros de auditoria
+A tabela `LogAuditoria` é imutável e **não é alterada** pela exclusão. O evento de exclusão é registrado apenas com IDs (sem dados pessoais do titular).
 
 ### Evidências
+- **Modelo:** `usuarios/models.py::SolicitacaoExclusao`
+- **View do titular:** `usuarios/views_lgpd.py::solicitar_exclusao`
+- **Execução:** `usuarios/views_lgpd.py::executar_exclusao`
+- **Admin:** `usuarios/admin.py::SolicitacaoExclusaoAdmin` (actions Aprovar / Recusar)
+- **Testes:** `usuarios/test_exclusao_lgpd.py`
+- **Evidência de teste:** `docs/evidencias/saida_teste_exclusao_lgpd.txt`
+- **Print do log anonimizado:** `docs/evidencias/log_anonimizado_apos_exclusao.png`
 
-- **Arquivo:** usuarios/templates/usuarios/solicitar_exclusao.html
-- **Código:** usuarios/views_lgpd.py::solicitar_exclusao
-- **Log:** logs/auditoria_seguranca.log (registro de solicitação de exclusão)
+![Log anonimizado após exclusão](evidencias/log_anonimizado_apos_exclusao.png)
 
 ## Fluxo de atendimento aos direitos documentado
 
@@ -312,3 +343,11 @@ A documentação do fluxo de atendimento atende ao art. 18 da LGPD e às diretri
 - **Arquivo:** `docs/lgpd/inventario_dados.md` (seção "O que é excluído de fato")
 - **Arquivo:** `usuarios/templates/usuarios/politica_privacidade.html` (seção "7. Direitos do Titular")
 - **Arquivo:** `usuarios/templates/usuarios/termos_uso.html` (seção "6. Privacidade")
+
+## Histórico de alterações
+
+| Versão | Data | Alteração | Responsável |
+|---|---|---|---|
+| 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
+| 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 03/11/2026 | Atualização no fluxo de exclusão com solicitação e aprovação do admin | Marcos Antônio Ferreira de Araújo |
