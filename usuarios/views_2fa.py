@@ -70,7 +70,7 @@ def ativar_2fa(request):
             config.save()
             registrar_evento_2fa(usuario=request.user, evento='ativacao', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'))
             messages.success(request, '2FA ativado com sucesso! Seu login agora está mais seguro.')
-            return redirect('usuarios:dashboard')
+            return redirect('dashboard:home')
         else:
             registrar_evento_2fa(usuario=request.user, evento='ativacao', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Token inválido')
             messages.error(request, 'Código inválido. Verifique o código no seu aplicativo e tente novamente.')

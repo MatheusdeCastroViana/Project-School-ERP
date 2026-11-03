@@ -131,7 +131,7 @@ class FluxoDoisFatoresComChaveCifradaTests(TestCase):
             reverse("usuarios:ativar_2fa"), {"token": pyotp.TOTP(segredo).now()}
         )
         self.assertRedirects(
-            resposta, reverse("usuarios:dashboard"), fetch_redirect_response=False
+            resposta, reverse("dashboard:home"), fetch_redirect_response=False
         )
         self.assertTrue(Configuracao2FA.objects.get(usuario=self.usuario).ativado)
 
