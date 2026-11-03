@@ -3,39 +3,41 @@ import hashlib
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 
 from .audit import (
     registrar_consentimento,
     registrar_exportacao_dados,
     registrar_solicitacao_exclusao,
-    registrar_evento_lgpd,  # Nova função para eventos genéricos de LGPD (revogação)
+    registrar_evento_lgpd,
+    _gravar_no_banco,
 )
+from .models import ConsentimentoLGPD, VersaoTextoConsentimento, SolicitacaoExclusao
 from funcionarios.mascaras import mascarar_cpf, mascarar_telefone
+from config.criptografia import indice_cego
+from funcionarios.models import JornadaTrabalho, somente_digitos
 
 from .models_2fa import Configuracao2FA
-# Importando os novos modelos de consentimento
-from .models import ConsentimentoLGPD, VersaoTextoConsentimento
+from .models_recuperacao import TokenRecuperacaoSenha
 
-# Lista de campos que não podem ser excluídos automaticamente por obrigação legal/contratual
+# Lista de dados que ficam retidos por obrigação legal/contratual (não são anonimizados).
+# Todos os demais dados pessoais do titular são anonimizados/apagados na exclusão.
 CAMPOS_PROTEGIDOS = [
     {
-        'dado': 'Nome e CPF',
-        'motivo': 'Necessários para identificação funcional e obrigações trabalhistas enquanto o vínculo estiver ativo.',
+        'dado': 'Logs de auditoria (LogAuditoria)',
+        'motivo': 'Imutáveis por obrigação de segurança e rastreabilidade (LGPD art. 16).',
     },
     {
-        'dado': 'E-mail e senha da conta',
-        'motivo': 'Necessários para o funcionamento do login; excluir inviabilizaria o acesso ao sistema.',
+        'dado': 'Consentimentos LGPD (ConsentimentoLGPD)',
+        'motivo': 'Prova de consentimento do titular (LGPD art. 8º, §2º).',
     },
     {
-        'dado': 'Cargo',
-        'motivo': 'Controla as permissões de acesso ao sistema.',
-    },
-    {
-        'dado': 'Jornada de trabalho',
-        'motivo': 'Dado administrativo vinculado ao funcionário enquanto estiver ativo.',
+        'dado': 'Solicitação de exclusão (SolicitacaoExclusao)',
+        'motivo': 'Prova do atendimento ao direito do titular (LGPD art. 18).',
     },
 ]
 
@@ -125,39 +127,118 @@ def exportar_dados(request):
 @login_required
 def solicitar_exclusao(request):
     """
-    Permite a exclusão de dados não essenciais (ex: telefone).
-    Dados protegidos por obrigação legal são mantidos e justificados na interface.
+    Permite ao titular solicitar a exclusão de seus dados pessoais (LGPD - RF 4.10).
+    Apenas cria uma SolicitacaoExclusao com status PENDENTE.
+    Nenhum dado é excluído aqui; a Gestão decide no admin.
     """
     if request.method == 'POST':
-        campos_removidos = []
-        funcionario = request.user.funcionario
+        # Impede segunda solicitação enquanto houver uma pendente
+        ja_pendente = SolicitacaoExclusao.objects.filter(
+            usuario=request.user, status='PENDENTE'
+        ).exists()
+        if ja_pendente:
+            messages.warning(
+                request,
+                'Você já tem uma solicitação de exclusão pendente de análise.',
+            )
+            return redirect('usuarios:solicitar_exclusao')
 
-        if funcionario and funcionario.telefone:
-            funcionario.telefone = ''
-            funcionario.save(update_fields=['telefone'])
-            campos_removidos.append('telefone')
-
+        solicitacao = SolicitacaoExclusao.objects.create(
+            usuario=request.user,
+            status='PENDENTE',
+        )
         registrar_solicitacao_exclusao(
             usuario=request.user,
-            campos_removidos=campos_removidos,
+            campos_removidos=[],
             ip_address=request.META.get('REMOTE_ADDR'),
         )
 
-        if campos_removidos:
-            messages.success(
-                request,
-                'Seu telefone foi removido. Os demais dados são protegidos e não podem ser excluídos automaticamente.'
-            )
-        else:
-            messages.info(
-                request,
-                'Não havia telefone cadastrado para remover. Os demais dados são protegidos e não podem ser excluídos automaticamente.'
-            )
-
+        messages.success(
+            request,
+            'Solicitação de exclusão registrada com sucesso.',
+        )
         return redirect('usuarios:solicitar_exclusao')
 
     context = {'campos_protegidos': CAMPOS_PROTEGIDOS}
     return render(request, 'usuarios/solicitar_exclusao.html', context)
+
+
+def executar_exclusao(solicitacao):
+    """
+    Anonimiza os dados do titular e executa a exclusão aprovada.
+
+    Dentro de transaction.atomic(): se qualquer passo falhar, nada é gravado.
+    Recusa a execução se o status não for APROVADA ou se já foi executada.
+    """
+    # Recusa se não estiver aprovada ou já executada
+    if solicitacao.status != 'APROVADA':
+        raise ValueError(
+            f'Solicitação {solicitacao.pk} não está aprovada (status: {solicitacao.status}).'
+        )
+    if solicitacao.executado_em is not None:
+        raise ValueError(
+            f'Solicitação {solicitacao.pk} já foi executada em {solicitacao.executado_em}.'
+        )
+
+    usuario = solicitacao.usuario
+    funcionario = getattr(usuario, 'funcionario', None)
+
+    with transaction.atomic():
+        # --- Anonimiza dados do Funcionario ---
+        if funcionario:
+            # Nome -> valor não identificável
+            funcionario.nome = f'Titular anonimizado #{funcionario.pk}'
+            # CPF -> valor não identificável (será cifrado pelo CampoCifrado)
+            funcionario.cpf = f'anonimizado-{funcionario.pk}'
+            # cpf_indice é unique: usar índice cego de valor não identificável e único por id
+            funcionario.cpf_indice = indice_cego(
+                somente_digitos(f'anonimizado-{funcionario.pk}')
+            )
+            # Telefone -> vazio
+            funcionario.telefone = ''
+            # Funcionario fica inativo (linha mantida por FKs PROTECT)
+            funcionario.ativo = False
+            funcionario.save()
+
+            # Jornadas -> apagar
+            funcionario.jornadas.all().delete()
+
+        # --- Anonimiza dados do Usuario ---
+        usuario_email_anonimo = f'anonimizado-{usuario.pk}@invalido.local'
+        usuario.email = usuario_email_anonimo
+        usuario.set_unusable_password()
+        usuario.is_active = False
+        usuario.save(update_fields=['email', 'password', 'is_active'])
+
+        # --- Invalida chave TOTP (apaga) ---
+        try:
+            config_2fa = usuario.config_2fa
+            Configuracao2FA.objects.filter(pk=config_2fa.pk).update(
+                chave_secreta='', ativado=False
+            )
+        except Configuracao2FA.DoesNotExist:
+            pass
+
+        # --- Apaga tokens de recuperação de senha (têm IP/user-agent) ---
+        TokenRecuperacaoSenha.objects.filter(usuario=usuario).delete()
+
+        # --- Marca a solicitação como executada ---
+        solicitacao.executado_em = now()
+        solicitacao.save(update_fields=['executado_em'])
+
+        # --- Registra no LogAuditoria (apenas id, sem dados pessoais) ---
+        _gravar_no_banco(
+            usuario=None,
+            tipo_evento='exclusao_dados',
+            sucesso=True,
+            mensagem=(
+                f'Exclusão de dados executada | Usuário ID: {usuario.pk} | '
+                f'Solicitação ID: {solicitacao.pk}'
+            ),
+            ip_address=None,
+            detalhes={'usuario_id': usuario.pk, 'solicitacao_id': solicitacao.pk},
+        )
+
 
 # CORREÇÕES E NOVAS VIEWS DE CONSENTIMENTO LGPD (Pós-Login)
 

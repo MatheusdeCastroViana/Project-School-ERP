@@ -251,3 +251,59 @@ class ConsentimentoLGPD(models.Model):
     def obter_ultimo_consentimento(cls, usuario, tipo):
         """Retorna o último consentimento do usuário para um tipo específico."""
         return cls.objects.filter(usuario=usuario, tipo=tipo).order_by('-data_consentimento').first()
+
+
+# SOLICITAÇÃO DE EXCLUSÃO DE DADOS (LGPD RF 4.10)
+
+STATUS_SOLICITACAO = [
+    ('PENDENTE', 'Pendente'),
+    ('APROVADA', 'Aprovada'),
+    ('RECUSADA', 'Recusada'),
+]
+
+
+class SolicitacaoExclusao(models.Model):
+    """Solicitação de exclusão de dados do titular (LGPD Art. 18, VI).
+
+    O titular solicita, a Gestão aprova ou recusa no admin,
+    e só então os dados são anonimizados/excluídos.
+    """
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='solicitacoes_exclusao',
+        verbose_name='Usuário',
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_SOLICITACAO,
+        default='PENDENTE',
+        verbose_name='Status',
+    )
+    justificativa = models.TextField(
+        blank=True,
+        verbose_name='Justificativa',
+        help_text='Obrigatória quando o status for Recusada.',
+    )
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name='Criado em')
+    decidido_em = models.DateTimeField(null=True, blank=True, verbose_name='Decidido em')
+    decidido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitacoes_decididas',
+        verbose_name='Decidido por',
+    )
+    executado_em = models.DateTimeField(null=True, blank=True, verbose_name='Executado em')
+
+    class Meta:
+        verbose_name = 'Solicitação de exclusão'
+        verbose_name_plural = 'Solicitações de exclusão'
+        ordering = ['-criado_em']
+
+    def __str__(self):
+        return f'{self.usuario.email} - {self.get_status_display()} ({self.criado_em:%d/%m/%Y})'
+
+    def pode_ser_decidida(self):
+        return self.status == 'PENDENTE'

@@ -48,17 +48,38 @@ Os dados coletados e suas finalidades foram definidos com o objetivo de aplicar 
 
 ### O que é excluído de fato (RF 4.10)
 
-Como a maioria dos dados do funcionário está protegida por vínculos técnicos (`on_delete=PROTECT`) ou é necessária para o funcionamento do sistema enquanto o vínculo estiver ativo, a exclusão hoje é parcial. A tela deixa isso explícito para o titular antes da confirmação.
+Como a maioria dos dados do funcionário está protegida por vínculos técnicos (`on_delete=PROTECT`) ou é necessária para o funcionamento do sistema enquanto o vínculo estiver ativo, a exclusão segue um fluxo de solicitação e aprovação. O titular não exclui diretamente; ele solicita e a Gestão decide.
 
-| Dado | Pode ser excluído? | Motivo |
-| --- | --- | --- |
-| Telefone | Sim | Não possui vínculo com outros dados do sistema. |
-| Nome, CPF | Não | Necessários para identificação funcional e obrigações trabalhistas enquanto o vínculo estiver ativo. |
-| E-mail e senha da conta | Não | Necessários para o funcionamento do login; excluir inviabilizaria o acesso ao sistema. |
-| Cargo | Não | Controla as permissões de acesso ao sistema. |
-| Jornada de trabalho | Não | Dado administrativo vinculado ao funcionário enquanto estiver ativo. |
+#### Fluxo de solicitação (RF 4.10)
+
+1. **Titular solicita:** via `/usuarios/meus-dados/exclusao/`, o titular cria uma `SolicitacaoExclusao` com status **PENDENTE**. Nenhum dado é alterado neste passo. O sistema impede uma segunda solicitação enquanto houver uma pendente.
+2. **Gestão decide no Admin:** em `/admin/usuarios/solicitacaoexclusao/`, a Gestão vê a fila de pendentes e pode:
+   - **Aprovar:** executa `executar_exclusao()`, que anonimiza nome, CPF, cpf_indice, telefone, e-mail, senha, chave TOTP, tokens de recuperação e jornadas. Marca usuário e funcionário como inativos. CPF, nome e cpf_indice são substituídos por valores não identificáveis.
+   - **Recusar:** mantém todos os dados intactos, registra justificativa e quem decidido. Só recusa com justificativa preenchida.
+
+#### Dados retidos vs. anonimizados
+
+| Dado | O que acontece | Motivo / Base legal |
+|------|---------------|---------------------|
+| Nome | Anonimizado (`Titular anonimizado #<id>`) | LGPD art. 12 (anonimização) |
+| CPF (`cpf`) | Substituído por valor não identificável, mantido cifrado | LGPD art. 16 (retenção fiscal/trabalhista) |
+| CPF (`cpf_indice`) | Recalculado com índice cego de valor não identificável | LGPD art. 16; garante unicidade sem identificar |
+| Telefone | Anonimizado (zerado) | Não possui vínculo com outros dados do sistema |
+| Jornadas de trabalho | Apagadas | Dados pessoais do titular, sem obrigação de retenção |
+| E-mail da conta | Anonimizado (`anonimizado-<id>@invalido.local`) | Dado de contato não essencial após exclusão |
+| Senha do usuário | Tornada inutilizável | Dado de autenticação do titular |
+| Chave TOTP (2FA) | Invalidada (apagada) | Dado de autenticação do titular |
+| Tokens de recuperação | Apagados | Contêm IP e user-agent (dados pessoais) |
+| Funcionario (linha) | Mantida, `ativo=False` | FKs `PROTECT` impedem exclusão da linha |
+| Usuario (linha) | Mantida, `is_active=False` | Necessário para integridade de FKs e auditoria |
+| LogAuditoria | Não alterado | Imutável por obrigação de auditoria (LGPD art. 16) |
+| ConsentimentoLGPD | Não alterado | Prova de consentimento (LGPD art. 8º, §2º) |
+| SolicitacaoExclusao | Não alterada | Prova do atendimento ao direito do titular (LGPD art. 18) |
+| Cargo / Setor | Mantidos | Não identificam a pessoa individualmente |
 
 Toda solicitação de exclusão é registrada no log de auditoria (`usuarios/audit.py`, função `registrar_solicitacao_exclusao`), mesmo quando nenhum dado é efetivamente removido.
+
+> Retenção futura: nos módulos Aluno e Responsável (ainda não implementados), dados financeiros e contratuais poderão ser retidos por obrigação fiscal e trabalhista, conforme definido no inventário correspondente.
 
 ## Histórico de alterações
 
@@ -66,3 +87,4 @@ Toda solicitação de exclusão é registrada no log de auditoria (`usuarios/aud
 |---|---|---|---|
 | 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados (RF 4.8, 4.9, 4.10) | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 03/11/2026 | Fluxo de exclusão com solicitação e aprovação da Gestão (RF 4.10): modelo SolicitacaoExclusao, admin com ações Aprovar/Recusar, execução em transaction.atomic() | Marcos Antônio Ferreira de Araújo |
