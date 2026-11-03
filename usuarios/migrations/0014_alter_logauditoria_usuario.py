@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('usuarios', '0013_auto_20261102_2134'),
+        ('usuarios', '0013_bloquear_alteracao_logauditoria'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='logauditoria',
             name='usuario',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='logs_auditoria', to=settings.AUTH_USER_MODEL, verbose_name='Usuário'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='logs_auditoria', to=settings.AUTH_USER_MODEL, verbose_name='Usuário'),
         ),
     ]

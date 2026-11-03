@@ -92,7 +92,7 @@ class LogAuditoria(models.Model):
     
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='logs_auditoria',
