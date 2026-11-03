@@ -90,6 +90,55 @@ A imutabilidade dos logs é um pilar fundamental da segurança da informação e
 
 ---
 
+## Proteção por trigger no banco de dados (PostgreSQL)
+
+**Requisito:** A tabela de logs de auditoria deve ser protegida no nível do banco de dados, impedindo alterações ou exclusões mesmo que alguém consiga burlar as camadas de aplicação.
+
+### Decisão adotada
+
+Foi implementado um mecanismo de proteção no próprio PostgreSQL, utilizando `migrations.RunSQL` na migration `usuarios.0013_auto_20261102_2134`, que cria:
+
+1. **Função PL/pgSQL `usuarios_bloquear_alteracao_logauditoria()`** — dispara `RAISE EXCEPTION` sempre que uma operação de UPDATE ou DELETE for tentativa na tabela `usuarios_logauditoria`.
+2. **Trigger `usuarios_trigger_bloquear_update_delete_logauditoria`** — trigger `BEFORE UPDATE OR DELETE` em nível de statement (`FOR EACH STATEMENT`) vinculado à função acima.
+3. **Função `usuarios_bloquear_truncate_logauditoria()`** — `event_trigger` que verifica tabelas alvo de TRUNCATE via `pg_event_trigger_truncated_tables()` e lança exceção se a tabela for `usuarios_logauditoria`.
+4. **Event Trigger `usuarios_event_bloquear_truncate_logauditoria`** — dispara a função acima sempre que um TRUNCATE for executado.
+
+Com isso, qualquer tentativa de UPDATE, DELETE ou TRUNCATE via SQL cru é recusada pelo banco de dados, independentemente do usuário ou da aplicação que esteja tentando executar.
+
+### Ajuste no campo `usuario` da model
+
+O campo `usuario` da model `LogAuditoria` estava configurado com `on_delete=models.SET_NULL`. Isso faria o Django tentar um `UPDATE` na tabela de logs para zerar a FK sempre que um usuário fosse excluído, o que entraria em conflito com o trigger de bloqueio de UPDATE.
+
+**Decisão:** o campo foi alterado para `on_delete=models.DO_NOTHING`, mantendo o ID do usuário histórico no registro de log e evitando que o Django tente modificar a linha do log. A migration correspondente é `usuarios.0014_alter_logauditoria_usuario`.
+
+### Limitação de segurança
+
+O dono (owner) da tabela ou um superuser do banco de dados ainda possui privilégios para executar um `DROP TRIGGER` e burlar a proteção aqui implementada. O trigger protege contra alterações acidentais ou maliciosas por usuários comuns da aplicação, mas não substitui controles de acesso adequados no nível do banco de dados (revogação de privilégios, auditoria de superusuários, etc.).
+
+### Simulação de erro ao tentar alterar a tabela
+
+```sql
+-- Tentativa de UPDATE via SQL cru
+UPDATE usuarios_logauditoria SET mensagem = 'tentativa de alteracao' WHERE id = 1;
+-- ERRO:  Operação não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+
+-- Tentativa de DELETE via SQL cru
+DELETE FROM usuarios_logauditoria WHERE id = 1;
+-- ERRO:  Operação não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+
+-- Tentativa de TRUNCATE via SQL cru
+TRUNCATE TABLE usuarios_logauditoria;
+-- ERRO:  Operação TRUNCATE não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+```
+
+### Evidências
+
+- **Código:** `usuarios/migrations/0013_auto_20261102_2134.py` (definição do trigger e event trigger via `migrations.RunSQL`).
+- **Código:** `usuarios/models.py` (alteração de `on_delete=models.SET_NULL` para `on_delete=models.DO_NOTHING` no campo `usuario` de `LogAuditoria`).
+- **Teste:** `usuarios/test_trigger_logauditoria.py` (TestCase que dispara SQLs crues de UPDATE, DELETE e TRUNCATE e valida que o banco recusa a operação).
+
+---
+
 ## Exemplo de análise de logs apresentado
 
 **Requisito:** O projeto deverá apresentar um exemplo de análise de logs, demonstrando como identificar uma sequência de falhas, um bloqueio ou uma tentativa de acesso suspeita.
