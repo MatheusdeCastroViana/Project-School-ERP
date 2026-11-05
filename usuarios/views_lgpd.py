@@ -296,12 +296,23 @@ def gerenciar_consentimentos(request):
 def revogar_consentimento(request, consentimento_id):
     try:
         consentimento = ConsentimentoLGPD.objects.get(id=consentimento_id, usuario=request.user)
+        vigente = ConsentimentoLGPD.obter_ultimo_consentimento(request.user, consentimento.tipo)
         if consentimento.status == 'revogado':
             messages.info(request, 'Este consentimento já foi revogado anteriormente.')
+        elif consentimento.status != 'aceito':
+            # Só um consentimento aceito pode ser revogado (recusa não é revogável).
+            messages.info(request, 'Apenas consentimentos aceitos podem ser revogados.')
+        elif vigente is None or vigente.pk != consentimento.pk:
+            # Impede revogar registros antigos já substituídos (evita revogações duplicadas na trilha).
+            messages.info(request, 'Este registro não é o consentimento vigente para esta finalidade.')
         else:
             consentimento.revogar(ip_address=request.META.get('REMOTE_ADDR'))
             registrar_evento_lgpd(usuario=request.user, evento='revogacao_consentimento', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'), detalhes={'tipo': consentimento.tipo})
             messages.success(request, f'Consentimento de "{consentimento.get_tipo_display()}" revogado com sucesso.')
+            if consentimento.tipo == 'tratamento_dados':
+                # O ConsentimentoMiddleware passa a bloquear todas as telas do sistema para este
+                # usuário até que um novo consentimento seja dado: o tratamento é interrompido.
+                messages.warning(request, 'O tratamento dos seus dados foi interrompido: seu acesso ao sistema permanece suspenso até que você dê um novo consentimento.')
     except ConsentimentoLGPD.DoesNotExist:
         messages.error(request, 'Consentimento não encontrado.')
     return redirect('usuarios:gerenciar_consentimentos')

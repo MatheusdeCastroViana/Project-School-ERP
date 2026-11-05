@@ -28,7 +28,7 @@ def _enviar_email_recuperacao(usuario, token_obj, token_cru, link_recuperacao):
     Args:
         usuario: Objeto do usuário
         token_obj: Objeto TokenRecuperacaoSenha (para pegar expira_em)
-        token_cru: String do token sem hash (para o link e debug)
+        token_cru: String do token sem hash (usada somente na montagem do link; nunca é impressa nem registrada em log)
         link_recuperacao: URL completa de recuperação
     """
     contexto = {
@@ -67,16 +67,11 @@ def _enviar_email_recuperacao(usuario, token_obj, token_cru, link_recuperacao):
         logger.error(f"Falha ao enviar e-mail de recuperação | Usuário: {usuario.email} | Erro: {str(e)}")
         raise
     
-    # Em desenvolvimento, exibe no console para facilitar testes
-    if settings.DEBUG:
-        print(f"\n{'='*60}")
-        print(f"LINK DE RECUPERAÇÃO DE SENHA (Ambiente de Desenvolvimento)")
-        print(f"{'='*60}")
-        print(f"Usuário: {usuario.email}")
-        print(f"Token Cru (para URL): {token_cru}")
-        print(f"Expira em: {token_obj.expira_em}")
-        print(f"Link: {link_recuperacao}")
-        print(f"{'='*60}\n")
+    # SEGURANÇA: o token cru e o link de recuperação NÃO são impressos no console
+    # nem gravados em log em nenhum ambiente (inclusive com DEBUG=True). O link
+    # trafega somente no corpo do e-mail enviado ao titular (em desenvolvimento,
+    # consulte-o na caixa do Mailtrap). Assim, quem tiver acesso a stdout ou aos
+    # logs da plataforma não consegue redefinir a senha de outro usuário.
 
 
 @csrf_protect
