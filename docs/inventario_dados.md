@@ -1,0 +1,92 @@
+# Inventário de dados coletados
+
+Lista dos dados coletados dos usuários do sistema. Alguns módulos ainda não foram implementados, portanto, este documento poderá ser atualizado conforme o desenvolvimento do sistema avançar. Sempre que um novo dado precisar ser coletado, ele será adicionado à tabela correspondente, e a alteração será registrada na tabela de alterações ao final do documento.
+
+Os dados coletados e suas finalidades foram definidos com o objetivo de aplicar o princípio da minimização de dados, evitando a coleta de informações desnecessárias.
+
+
+## Funcionário (Usuário)
+
+| Grupo | Dado | Titular | Finalidade | Acesso |
+| --- | --- | --- | --- | --- |
+| Identificação | nome, cpf | Funcionário | Identificação do colaborador | Gestão; própio funcionário |
+| Contato | telefone | Funcionário | Comunicação institucional | Gestão; próprio funcionário |
+| Profissional | cargo_id | Funcionário | Controle de acesso e permissões | Gestão; Administradores do sistema |
+| Profissional | jornada (dia/hora) | Funcionário | Gestão administrativa da rotina | Gestão|
+| Logs de Segurança | email, funcionario_id, ativo, 2fa_ativo | Funcionário (usuário) | Autenticação e controle de acesso | Administradores do sistema; próprio funcionário |
+| Logs de Segurança | tipo_evento, ip, data_hora | Funcionário (usuário) | Auditoria e rastreabilidade  | Administradores do sistema |
+| Logs de Segurança | usuario_id, token_hash, datas, usado | Funcionário (usuário) | Recuperação de senha | Administradores do sistema |
+| Logs de Segurança | tipo, versao, status, texto_hash, ip, user_agent, url_origem, datas | Funcionário (usuário) | Prova do consentimento e da revogação (LGPD art. 8º, §2º) | Administradores do sistema; próprio funcionário (Meus dados > Consentimentos) |
+
+## Aluno
+
+> Módulo ainda não implementado.
+
+| Grupo | Dado | Titular | Finalidade | Acesso |
+| --- | --- | --- | --- | --- |
+| Identificação | nome, cpf | Aluno | Identificação do titular / contrato | Gestão, Secretaria, setores autorizados |
+| Identificação | apelido | Aluno | Uso pedagógico (chamada em sala) | Pedagógico, professores vinculados |
+| Contato | telefone, endereco | Aluno | Comunicação / entrega de material | Gestão, Administrativo, setores autorizados |
+| Contato | email | Aluno | Login no portal do aluno / comunicação | Aluno (autoconsulta), Gestão, Administrativo |
+| Acadêmico | data_nascimento | Aluno | Validar maioridade e idade mínima para a turma | Gestão, Secretaria |
+| Acadêmico | matrícula, situação, notas | Aluno | Gestão da vida acadêmica | Pedagógico, professores vinculados, Gestão |
+| Financeiro | contrato, valores, desconto | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão contratual | Financeiro/Fiscal, Gestão |
+| Financeiro | cobranças, vencimento, pagamento | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão de cobranças | Financeiro/Fiscal, Gestão |
+
+> Observação: O portal do aluno será um sistema à parte, integrado à este sistema.
+
+## Responsável
+
+> Módulo ainda não implementado.
+
+| Grupo | Dado | Titular | Finalidade | Acesso |
+| --- | --- | --- | --- | --- |
+| Identificação | nome, cpf | Responsável | Identificação / vínculo contratual | Gestão, Secretaria, Financeiro |
+| Identificação | data_nascimento | Responsável | Validar maioridade para assumir responsabilidade legal | Gestão, Secretaria |
+| Contato | telefone, endereco | Responsável | Comunicação / cobrança | Gestão, Financeiro |
+| Financeiro | contrato, valores, desconto | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão contratual | Financeiro/Fiscal, Gestão |
+| Financeiro | cobranças, vencimento, pagamento | Aluno (+ Responsável, quando aluno for menor de idade) | Gestão de cobranças | Financeiro/Fiscal, Gestão |
+
+### O que é excluído de fato (RF 4.10)
+
+Como a maioria dos dados do funcionário está protegida por vínculos técnicos (`on_delete=PROTECT`) ou é necessária para o funcionamento do sistema enquanto o vínculo estiver ativo, a exclusão segue um fluxo de solicitação e aprovação. O titular não exclui diretamente; ele solicita e a Gestão decide.
+
+#### Fluxo de solicitação (RF 4.10)
+
+1. **Titular solicita:** via `/usuarios/meus-dados/exclusao/`, o titular cria uma `SolicitacaoExclusao` com status **PENDENTE**. Nenhum dado é alterado neste passo. O sistema impede uma segunda solicitação enquanto houver uma pendente.
+2. **Gestão decide no Admin:** em `/admin/usuarios/solicitacaoexclusao/`, a Gestão vê a fila de pendentes e pode:
+   - **Aprovar:** executa `executar_exclusao()`, que anonimiza nome, CPF, cpf_indice, telefone, e-mail, senha, chave TOTP, tokens de recuperação e jornadas. Marca usuário e funcionário como inativos. CPF, nome e cpf_indice são substituídos por valores não identificáveis.
+   - **Recusar:** mantém todos os dados intactos, registra justificativa e quem decidido. Só recusa com justificativa preenchida.
+
+#### Dados retidos vs. anonimizados
+
+| Dado | O que acontece | Motivo / Base legal |
+|------|---------------|---------------------|
+| Nome | Anonimizado (`Titular anonimizado #<id>`) | LGPD art. 12 (anonimização) |
+| CPF (`cpf`) | Substituído por valor não identificável, mantido cifrado | LGPD art. 16 (retenção fiscal/trabalhista) |
+| CPF (`cpf_indice`) | Recalculado com índice cego de valor não identificável | LGPD art. 16; garante unicidade sem identificar |
+| Telefone | Anonimizado (zerado) | Não possui vínculo com outros dados do sistema |
+| Jornadas de trabalho | Apagadas | Dados pessoais do titular, sem obrigação de retenção |
+| E-mail da conta | Anonimizado (`anonimizado-<id>@invalido.local`) | Dado de contato não essencial após exclusão |
+| Senha do usuário | Tornada inutilizável | Dado de autenticação do titular |
+| Chave TOTP (2FA) | Invalidada (apagada) | Dado de autenticação do titular |
+| Tokens de recuperação | Apagados | Contêm IP e user-agent (dados pessoais) |
+| Funcionario (linha) | Mantida, `ativo=False` | FKs `PROTECT` impedem exclusão da linha |
+| Usuario (linha) | Mantida, `is_active=False` | Necessário para integridade de FKs e auditoria |
+| LogAuditoria | Não alterado | Imutável por obrigação de auditoria (LGPD art. 16) |
+| ConsentimentoLGPD | Não alterado | Prova de consentimento (LGPD art. 8º, §2º) |
+| SolicitacaoExclusao | Não alterada | Prova do atendimento ao direito do titular (LGPD art. 18) |
+| Cargo / Setor | Mantidos | Não identificam a pessoa individualmente |
+
+Toda solicitação de exclusão é registrada no log de auditoria (`usuarios/audit.py`, função `registrar_solicitacao_exclusao`), mesmo quando nenhum dado é efetivamente removido.
+
+> Retenção futura: nos módulos Aluno e Responsável (ainda não implementados), dados financeiros e contratuais poderão ser retidos por obrigação fiscal e trabalhista, conforme definido no inventário correspondente.
+
+## Histórico de alterações
+
+| Versão | Data | Alteração | Responsável |
+|---|---|---|---|
+| 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
+| 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados (RF 4.8, 4.9, 4.10) | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 03/11/2026 | Fluxo de exclusão com solicitação e aprovação da Gestão (RF 4.10): modelo SolicitacaoExclusao, admin com ações Aprovar/Recusar, execução em transaction.atomic() | Marcos Antônio Ferreira de Araújo |
+| 1.3 | 04/11/2026 | Inclusão dos dados de consentimento (ConsentimentoLGPD) no inventário | Matheus de Castro Viana |

@@ -66,6 +66,31 @@ A exposição de códigos 2FA ou tokens de recuperação em logs representaria u
 
 ---
 
+## Logs de consentimento LGPD
+
+**Requisito:** Registrar de forma auditável os eventos de consentimento e de revogação, sem expor dados desnecessários.
+
+### Decisão adotada
+
+Os eventos de consentimento entram no `LogAuditoria` com `tipo_evento = 'consentimento_lgpd'` (rótulo "Consentimento LGPD" no admin), em três situações:
+
+- **Aceite e recusa:** função `registrar_consentimento` em `usuarios/audit.py`. O campo `detalhes` guarda `tipo`, `versao` e `aceitou`.
+- **Revogação:** função `registrar_evento_lgpd` com o evento `revogacao_consentimento`. O campo `detalhes` guarda `evento_lgpd` e `tipo`. Antes, a revogação era gravada com o tipo genérico `outro`; agora fica na mesma trilha dos aceites, podendo ser consultada com um único filtro.
+
+A mensagem do log traz e-mail do usuário, tipo, versão, status e IP. O texto integral apresentado ao titular não é gravado no log: a prova completa fica na tabela `usuarios_consentimentolgpd` (hash SHA-256 do texto, IP, user-agent, URL de origem e datas). As duas tabelas se complementam: o `LogAuditoria` dá a linha do tempo geral de segurança e o `ConsentimentoLGPD` guarda a prova de cada manifestação.
+
+### Justificativa técnica
+
+Registrar aceite, recusa e revogação na mesma trilha imutável permite reconstituir, para qualquer titular, quando e em que versão do texto ele consentiu ou revogou, e faz com que a trilha herde a proteção por trigger descrita acima. Manter o texto fora do log evita duplicar conteúdo e mantém a mensagem curta.
+
+### Evidências
+
+- **Código:** `usuarios/audit.py` (`registrar_consentimento` e `registrar_evento_lgpd`)
+- **Testes:** `usuarios/test_consentimento.py` (conferem a criação dos eventos `consentimento_lgpd` no aceite e na revogação)
+- **Print:** `evidencias/logs_consentimento_lgpd.png` (admin filtrado pelo tipo de evento "Consentimento LGPD")
+
+---
+
 ## Proteção contra alteração dos logs
 
 **Requisito:** Os logs deverão possuir proteção contra alteração ou exclusão indevida, por meio de controle de acesso, armazenamento protegido, integridade ou mecanismo equivalente.
@@ -155,5 +180,6 @@ O painel administrativo foi estruturado para funcionar como uma ferramenta de an
 |---|---|---|---|
 | 1.0 | 20/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
 | 1.1 | 03/11/2026 | Proteção por trigger no banco de dados | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 04/11/2026 | Logs de consentimento LGPD (aceite, recusa e revogação no mesmo tipo de evento) | Matheus de Castro Viana |
 
 ---

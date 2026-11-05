@@ -16,7 +16,7 @@
 
 Implementado um fluxo completo de recuperação de senha independente do django-allauth, composto por três etapas:
 
-1. **Solicitação** (/usuarios/recuperar-senha/): O usuário informa o e-mail cadastrado. Se o e-mail existir no sistema, um token criptográfico é gerado e o link de recuperação é enviado (em ambiente de desenvolvimento, exibido no console do servidor, em produção, será enviado por e-mail).
+1. **Solicitação** (/usuarios/recuperar-senha/): O usuário informa o e-mail cadastrado. Se o e-mail existir no sistema, um token criptográfico é gerado e o link de recuperação é enviado por e-mail via SMTP para a caixa de testes do Mailtrap.
 
 2. **Validação e redefinição** (/usuarios/recuperar-senha/<token>/): O usuário acessa o link recebido, que valida o token e apresenta um formulário para definição da nova senha.
 
@@ -43,7 +43,6 @@ Optamos por implementar um fluxo próprio em vez de utilizar o mecanismo de recu
 
 - **Arquivos**: usuarios/models_recuperacao.py, usuarios/forms_recuperacao.py, usuarios/views_recuperacao.py, config/templates/account/login.html
 - **Print da tela de solicitação** ![Print da tela de solicitação](evidencias/enviar_link_de_recuperacao.png): formulário com campo de e-mail e botão de envio
-- **Print do terminal** ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png): bloco destacado exibindo o link de recuperação gerado, contendo o token e o horário de expiração
 
 ---
 
@@ -55,7 +54,7 @@ Optamos por implementar um fluxo próprio em vez de utilizar o mecanismo de recu
 
 O token é gerado no método save() do modelo TokenRecuperacaoSenha utilizando a combinação de duas técnicas:
 
-1. **Geração de entropia**: secrets.token_urlsafe(64) com função da biblioteca padrão secrets do Python, que utiliza os.urandom() como fonte de entropia. Esta função é alimentada pelo gerador de números aleatórios do sistema operacional (CryptGenRandom no Windows), que é considerado criptograficamente seguro.
+1. **Geração de entropia**: secrets.token_urlsafe(48) com função da biblioteca padrão secrets do Python, que utiliza os.urandom() como fonte de entropia. Esta função é alimentada pelo gerador de números aleatórios do sistema operacional (CryptGenRandom no Windows), que é considerado criptograficamente seguro.
 
 2. **Hash SHA-256**: A string aleatória de 64 caracteres é submetida ao algoritmo SHA-256 (hashlib.sha256), produzindo um token final de 64 caracteres hexadecimais. O hash é armazenado no banco em vez da string original.
 
@@ -66,15 +65,13 @@ O campo token possui unique=True e db_index=True no modelo, garantindo unicidade
 
 A combinação secrets + SHA-256 atende a três objetivos de segurança:
 
-- Não previsibilidade: secrets.token_urlsafe() é projetado especificamente para geração de tokens seguros, em contraste com random (que é previsível). A entropia de 64 bytes (512 bits) antes do hash torna o espaço de busca impraticável para ataques de força bruta.
+- Não previsibilidade: secrets.token_urlsafe() é projetado especificamente para geração de tokens seguros, em contraste com random (que é previsível). A entropia de 48 bytes (384 bits) antes do hash torna o espaço de busca impraticável para ataques de força bruta.
 - Proteção em caso de comprometimento do banco: Mesmo que um atacante obtenha acesso de leitura ao banco de dados, ele verá apenas o hash SHA-256 do token, não o valor original. Como SHA-256 é uma função unidirecional, é computacionalmente inviável reverter o hash para obter a string original.
 - Tamanho adequado: 64 caracteres hexadecimais (256 bits de entropia efetiva).
 
 ### Evidências
 
 - **Arquivo:** usuarios/models_recuperacao.py (método save())
-- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** exemplo de token gerado com 64 caracteres hexadecimais
-- **Inspeção do banco:** campo token da tabela usuarios_tokenrecuperacaosenha contendo apenas o hash, nunca a string original
 
 ## RS 2.3 - Token com tempo de expiração
 
@@ -101,7 +98,6 @@ O valor de 24 horas está alinhado com as recomendações do OWASP, que sugere j
 
 - **Arquivo:** usuarios/models_recuperacao.py (método save() e is_valido())
 - **Configuração:** config/settings.py (TOKEN_RECUPERACAO_EXPIRACAO_HORAS = 24)
-- **Print do terminal ![Print do terminal](evidencias/codigo_de_recuperacao_no_terminal.png):** campo "Expira em" exibindo o timestamp de expiração
 - **Print de token expirado ![Print de token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica de erro ao tentar usar token fora do prazo
 
 ## RS 2.4 - Token invalidado após uso
@@ -151,6 +147,27 @@ Ao unificar todas as falhas em uma única mensagem, o sistema adere ao princípi
 
 - **Arquivo:** usuarios/views_recuperacao.py::confirmar_recuperacao
 - **Print de token expirado ![Print do token expirado](evidencias/codigo_de_recuperacao_expirado.png):** mensagem genérica exibida ao usuário
+
+## Entrega do link por e-mail e não exposição do token
+
+**Requisito:** O token completo não deverá ser registrado em logs nem exposto fora do canal destinado ao titular (RN-10).
+
+### Decisão adotada
+
+1. **Envio por SMTP.** O link de recuperação é enviado ao titular por e-mail (`send_mail`, com versão em texto e em HTML). O servidor SMTP é configurado por variáveis de ambiente (`EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL`), com exemplo em `.env.example`.
+2. **Provedor: Mailtrap (sandbox).** O projeto usa o Mailtrap para receber os e-mails. Como o Mailtrap é uma caixa de testes, as mensagens não chegam ao destinatário real: para uso em produção de fato será necessário um provedor com domínio de envio verificado.
+3. **O token e o link nunca são impressos nem registrados em log.** Em versões anteriores, em desenvolvimento (`DEBUG = True`), o link era exibido no console do servidor. Esse bloco foi removido: o token cru e o link existem apenas no corpo do e-mail enviado ao titular e, no banco, somente o hash SHA-256 do token é armazenado.
+4. **Configuração por ambiente.** Em desenvolvimento local, o `.env.example` aponta para o SMTP do Mailtrap. Se a variável `EMAIL_BACKEND` não for definida, o padrão do código é o backend de console do Django, que escreve o e-mail inteiro (inclusive o link) no terminal; por isso, em produção, `EMAIL_BACKEND` deve ser definida como o backend SMTP.
+
+### Justificativa técnica
+
+Quem tem acesso à saída padrão do servidor ou aos logs da plataforma de hospedagem não é o titular da conta. Se o link fosse impresso ali, essa pessoa poderia redefinir a senha de outro usuário, contornando todos os controles do fluxo (expiração, uso único e mensagem genérica). Restringir o token ao canal de e-mail mantém o segredo sob controle exclusivo do titular da caixa postal e atende à RN-10.
+
+### Evidências
+
+- **Código:** `usuarios/views_recuperacao.py::_enviar_email_recuperacao` (sem `print` e sem log do token ou do link)
+- **Configuração:** `config/settings.py` (variáveis `EMAIL_*`) e `.env.example`
+- **Teste automatizado:** `usuarios/test_consentimento.py::RecuperacaoNaoExpoeTokenTests`, que ativa `DEBUG = True`, solicita a recuperação e confirma que o link está apenas no e-mail enviado e que nada sobre ele é impresso em `stdout`
 
 ## Logs de recuperação de senha
 
@@ -211,3 +228,4 @@ Os logs **nunca registram** informações sensíveis:
 |---|---|---|---|
 | 1.0 | 05/09/2026 | Criação do documento, cobrindo os requisitos de recuperação de senha | Matheus de Castro Viana |
 | 1.1 | 06/09/2026 | Adição da documentação relativa aos logs de recuperação de senha | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 04/11/2026 | Entrega do link por e-mail (Mailtrap), remoção da exibição do token no console, correção do tamanho do token (`token_urlsafe(48)`) | Matheus Viana |
