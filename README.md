@@ -2,6 +2,11 @@
 
 Sistema web para gestão integrada de escolas profissionalizantes e de formação complementar.
 
+## Colaboradores do Projeto
+
+- Marcos Antônio Ferreira de Araújo
+- Matheus de Castro Viana
+
 ## Status do Projeto
 Este projeto está em desenvolvimento ativo como parte de um Projeto Integrador. Atualmente, o módulo de **Autenticação e Segurança** está completo e em conformidade com os requisitos de segurança da informação, incluindo 2FA, proteção contra força bruta e logs de auditoria.
 

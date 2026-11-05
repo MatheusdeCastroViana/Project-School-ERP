@@ -66,6 +66,31 @@ A exposição de códigos 2FA ou tokens de recuperação em logs representaria u
 
 ---
 
+## Logs de consentimento LGPD
+
+**Requisito:** Registrar de forma auditável os eventos de consentimento e de revogação, sem expor dados desnecessários.
+
+### Decisão adotada
+
+Os eventos de consentimento entram no `LogAuditoria` com `tipo_evento = 'consentimento_lgpd'` (rótulo "Consentimento LGPD" no admin), em três situações:
+
+- **Aceite e recusa:** função `registrar_consentimento` em `usuarios/audit.py`. O campo `detalhes` guarda `tipo`, `versao` e `aceitou`.
+- **Revogação:** função `registrar_evento_lgpd` com o evento `revogacao_consentimento`. O campo `detalhes` guarda `evento_lgpd` e `tipo`. Antes, a revogação era gravada com o tipo genérico `outro`; agora fica na mesma trilha dos aceites, podendo ser consultada com um único filtro.
+
+A mensagem do log traz e-mail do usuário, tipo, versão, status e IP. O texto integral apresentado ao titular não é gravado no log: a prova completa fica na tabela `usuarios_consentimentolgpd` (hash SHA-256 do texto, IP, user-agent, URL de origem e datas). As duas tabelas se complementam: o `LogAuditoria` dá a linha do tempo geral de segurança e o `ConsentimentoLGPD` guarda a prova de cada manifestação.
+
+### Justificativa técnica
+
+Registrar aceite, recusa e revogação na mesma trilha imutável permite reconstituir, para qualquer titular, quando e em que versão do texto ele consentiu ou revogou, e faz com que a trilha herde a proteção por trigger descrita acima. Manter o texto fora do log evita duplicar conteúdo e mantém a mensagem curta.
+
+### Evidências
+
+- **Código:** `usuarios/audit.py` (`registrar_consentimento` e `registrar_evento_lgpd`)
+- **Testes:** `usuarios/test_consentimento.py` (conferem a criação dos eventos `consentimento_lgpd` no aceite e na revogação)
+- **Print:** `evidencias/logs_consentimento_lgpd.png` (admin filtrado pelo tipo de evento "Consentimento LGPD")
+
+---
+
 ## Proteção contra alteração dos logs
 
 **Requisito:** Os logs deverão possuir proteção contra alteração ou exclusão indevida, por meio de controle de acesso, armazenamento protegido, integridade ou mecanismo equivalente.
@@ -90,6 +115,53 @@ A imutabilidade dos logs é um pilar fundamental da segurança da informação e
 
 ---
 
+## Proteção por trigger no banco de dados (PostgreSQL)
+
+**Requisito:** A tabela de logs de auditoria deve ser protegida no nível do banco de dados, impedindo alterações ou exclusões mesmo que alguém consiga burlar as camadas de aplicação.
+
+### Decisão adotada
+
+A proteção foi implementada no próprio PostgreSQL, com `migrations.RunSQL` na migration `usuarios.0013_bloquear_alteracao_logauditoria`, que cria:
+
+1. **Função PL/pgSQL `usuarios_bloquear_alteracao_logauditoria()`**: dispara `RAISE EXCEPTION` sempre que é chamada.
+2. **Trigger `usuarios_trigger_bloquear_alteracao_logauditoria`**: `BEFORE UPDATE OR DELETE OR TRUNCATE` em nível de statement (`FOR EACH STATEMENT`) na tabela `usuarios_logauditoria`, vinculado à função acima.
+
+Com isso, qualquer `UPDATE`, `DELETE` ou `TRUNCATE` via SQL cru é recusado pelo banco, inclusive quando a instrução não afeta nenhuma linha. O `INSERT` continua permitido, pois é o que grava os novos logs. O `TRUNCATE` é coberto pelo próprio trigger de tabela, sem exigir privilégio de superusuário.
+
+### Ajuste no campo `usuario` da model
+
+O campo `usuario` de `LogAuditoria` usava `on_delete=models.SET_NULL`. Isso faria o Django executar um `UPDATE` na tabela de logs para zerar a chave estrangeira ao excluir um usuário, o que conflitaria com o trigger.
+
+**Decisão:** o campo passou a usar `on_delete=models.PROTECT` (migration `usuarios.0014_alter_logauditoria_usuario`). Um usuário que possui logs não pode ser excluído: o Django recusa a operação com `ProtectedError`, e o histórico continua íntegro e vinculado ao usuário. O desligamento de um usuário deve ser feito por inativação, nunca por exclusão.
+
+### Limitações de segurança
+
+- O dono (owner) da tabela ou um superusuário do banco ainda pode executar `DROP TRIGGER` e remover a proteção. O trigger protege contra alterações acidentais ou maliciosas feitas por usuários comuns da aplicação, mas não substitui controles de acesso no nível do banco (revogação de privilégios, auditoria de superusuários).
+- Como o `TRUNCATE` na tabela é bloqueado, comandos que esvaziam todas as tabelas, como `manage.py flush` e `TransactionTestCase`, também são bloqueados. O projeto usa apenas `TestCase`, que não é afetado.
+
+### Simulação de erro ao tentar alterar a tabela
+
+```sql
+-- Tentativa de UPDATE via SQL cru
+UPDATE usuarios_logauditoria SET mensagem = 'tentativa de alteracao' WHERE id = 1;
+-- ERRO:  Operação não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+
+-- Tentativa de DELETE via SQL cru
+DELETE FROM usuarios_logauditoria WHERE id = 1;
+-- ERRO:  Operação não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+
+-- Tentativa de TRUNCATE via SQL cru
+TRUNCATE TABLE usuarios_logauditoria;
+-- ERRO:  Operação não permitida na tabela usuarios_logauditoria: logs de auditoria são imutáveis.
+```
+
+### Evidências
+
+- **Código:** `usuarios/migrations/0013_bloquear_alteracao_logauditoria.py` (função e trigger via `migrations.RunSQL`).
+- **Código:** `usuarios/models.py` (campo `usuario` de `LogAuditoria` com `on_delete=models.PROTECT`) e `usuarios/migrations/0014_alter_logauditoria_usuario.py`.
+- **Teste:** `usuarios/test_trigger_logauditoria.py`, que dispara `UPDATE`, `DELETE` e `TRUNCATE` por SQL cru e exige a mensagem de bloqueio do banco, confere que novos logs ainda podem ser inseridos e que um usuário com logs não pode ser excluído.
+- **Comando:** `python manage.py test usuarios.test_trigger_logauditoria -v 2`
+
 ## Exemplo de análise de logs apresentado
 
 **Requisito:** O projeto deverá apresentar um exemplo de análise de logs, demonstrando como identificar uma sequência de falhas, um bloqueio ou uma tentativa de acesso suspeita.
@@ -100,9 +172,14 @@ O painel administrativo foi estruturado para funcionar como uma ferramenta de an
 - **Filtro por Usuário:** Dropdown lateral para isolar a atividade de um usuário específico.
 - **Filtro por Tipo de Evento:** Permite visualizar apenas "Falha de Login" ou "Login Bloqueado".
 - **Filtro por Sucesso:** Isola tentativas mal-sucedidas.
-- **Busca por IP:** Campo de pesquisa para rastrear acessos de origens suspeitas.
+- **Filtro por IP:** Campo de pesquisa para rastrear acessos de origens suspeitas.
 
+## Histórico de alterações
 
-### Evidências
+| Versão | Data | Alteração | Responsável |
+|---|---|---|---|
+| 1.0 | 20/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
+| 1.1 | 03/11/2026 | Proteção por trigger no banco de dados | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 04/11/2026 | Logs de consentimento LGPD (aceite, recusa e revogação no mesmo tipo de evento) | Matheus de Castro Viana |
 
-- **Print:** `docs/evidencias/logs_registrados_filtrando_por_user.png` 
+---
