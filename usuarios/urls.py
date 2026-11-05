@@ -16,10 +16,17 @@ urlpatterns = [
     path('recuperar-senha/', views_recuperacao.solicitar_recuperacao, name='solicitar_recuperacao'),
     path('recuperar-senha/<str:token>/', views_recuperacao.confirmar_recuperacao, name='confirmar_recuperacao'),
 
+    # LGPD: Consulta, Exportação e Exclusão
     path('meus-dados/', views_lgpd.consultar_dados, name='consultar_dados'),
     path('meus-dados/exportar/', views_lgpd.exportar_dados, name='exportar_dados'),
     path('meus-dados/exclusao/', views_lgpd.solicitar_exclusao, name='solicitar_exclusao'),
+    
+    # LGPD: rotas de Consentimento e Revogação
+    path('meus-dados/consentimentos/', views_lgpd.gerenciar_consentimentos, name='gerenciar_consentimentos'),
+    path('meus-dados/consentimentos/<int:consentimento_id>/revogar/', views_lgpd.revogar_consentimento, name='revogar_consentimento'),
+    path('consentir/', views_lgpd.consentir_obrigatorio, name='consentir_obrigatorio'),
     path('api/consentimento/', views_lgpd.registrar_consentimento_view, name='registrar_consentimento'),
+    
     path('politica-privacidade/', views_lgpd.politica_privacidade, name='politica_privacidade'),
     path('termos-uso/', views_lgpd.termos_uso, name='termos_uso'),
 ]

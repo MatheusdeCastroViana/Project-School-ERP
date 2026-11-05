@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from config.test_criptografia import chaves, gerar_chave
 from funcionarios.models import Cargo, Funcionario, Setor
+from usuarios.models import ConsentimentoLGPD
 from usuarios.models_2fa import Configuracao2FA
 
 Usuario = get_user_model()
@@ -40,6 +41,7 @@ class AutorizacaoDosPaineisTests(TestCase):
             email=email, password="SenhaTeste123!", funcionario=funcionario
         )
         Configuracao2FA.objects.create(usuario=usuario, ativado=True)
+        ConsentimentoLGPD.objects.create(usuario=usuario, tipo="tratamento_dados", versao="1.0", texto_hash="0" * 64, status="aceito")
         return usuario
 
     def test_anonimo_e_redirecionado_para_o_login(self):
@@ -73,6 +75,7 @@ class AutorizacaoDosPaineisTests(TestCase):
     def test_superusuario_acessa_todos_os_paineis(self):
         admin = Usuario.objects.create_superuser(email="admin@exemplo.com", password="SenhaTeste123!")
         Configuracao2FA.objects.create(usuario=admin, ativado=True)
+        ConsentimentoLGPD.objects.create(usuario=admin, tipo="tratamento_dados", versao="1.0", texto_hash="0" * 64, status="aceito")
         self.client.force_login(admin)
         for nome, rota in PAINEIS.items():
             with self.subTest(painel=nome):

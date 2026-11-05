@@ -122,9 +122,68 @@ Como o Fernet não é determinístico, o mesmo CPF gera textos cifrados diferent
 
 ---
 
+## Procedimento Operacional — Rotação de Chaves
+
+### Quem executa
+O Analista de Segurança da Informação ou o desenvolvedor responsável pela aplicação, com acesso ao servidor de produção e ao cofre de senhas onde as chaves são guardadas.
+
+### Quando executar
+Sempre que houver suspeita de comprometimento de uma chave criptográfica, ou periodicamente como boa prática de segurança (por exemplo, a cada 6 ou 12 meses). Também sempre que uma nova chave for adicionada ao `FIELD_ENCRYPTION_KEYS` e quiser migrar os dados existentes para ela.
+
+### Onde ficam as chaves e o backup
+As chaves ficam armazenadas exclusivamente em variáveis de ambiente (`FIELD_ENCRYPTION_KEYS`), nunca no código-fonte nem no banco de dados.
+
+- **Em desenvolvimento:** o arquivo `.env` (não versionado no Git) contém essas variáveis.
+- **Em produção no Render:** as chaves ficam nas variáveis de ambiente do painel do Render, não num `.env`.
+
+**Backup:** antes de qualquer alteração, faça backup do arquivo `.env` (ou exporte as variáveis do Render) **e** um dump do banco de dados. Guarde o backup do `.env`/variáveis em local separado do dump do banco — por exemplo, num cofre de senhas. Se as duas coisas ficarem juntas, quem tiver acesso ao backup terá acesso aos dados decifrados, anulando a criptografia. Se algo der errado, você restaura o backup e volta para a chave anterior.
+
+> Atenção: se a chave antiga foi comprometida, backups e dumps antigos continuam decifráveis por ela. Considere rotacionar também os dados contidos nesses backups ou tratá-los como comprometidos.
+
+### Como executar (passo a passo)
+
+1. Gere uma nova chave Fernet:
+   ```bash
+   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   ```
+
+2. Faça backup do `.env` (ou exporte as variáveis do Render) **e** de um dump do banco de dados. Guarde o backup das chaves em local separado do dump do banco.
+
+3. Adicione a nova chave no início da variável de ambiente `FIELD_ENCRYPTION_KEYS` (ela fica na primeira posição para ser usada nas novas cifragens), mantendo a chave antiga na lista para ainda poder decifrar dados antigos. Exemplo no `.env`:
+   ```
+   FIELD_ENCRYPTION_KEYS=<nova_chave>,<chave_antiga>
+   ```
+
+4. Reinicie a aplicação para carregar as novas variáveis de ambiente.
+
+5. Rode o comando de rotação:
+   ```bash
+   python manage.py rotacionar_chaves
+   ```
+   O comando recifra CPF, telefone e chave TOTP de todos os registros com a chave mais nova e recalcula o `cpf_indice`.
+   
+   Use `--dry-run` para simular sem gravar alterações:
+   ```bash
+   python manage.py rotacionar_chaves --dry-run
+   ```
+
+6. Confira que os dados ainda estão acessíveis (login, 2FA, consulta de CPF funcionam).
+
+   Atenção: o `cpf_indice` depende da `BLIND_INDEX_KEY`. Se essa chave também for trocada entre o passo 4 e o passo 5, as buscas por CPF podem falhar até que o comando de rotação seja rodado e recalcule os índices.
+
+7. Depois de confirmar que tudo está funcionando, pode remover a chave antiga da lista (opcional). Se remover, dados cifrados apenas com ela não serão mais decifráveis — por isso o backup é importante.
+
+### Evidências
+- Teste automatizado: `funcionarios/test_rotacao_chaves.py`
+
+### Comando disponível
+`python manage.py rotacionar_chaves` recifra CPF, telefone e chave TOTP com a chave mais nova e recalcula o cpf_indice.
+
+---
+
 ## Histórico de alterações
 
 | Versão | Data | Alteração | Responsável |
 |---|---|---|---|
 | 1.0 | 12/10/2026 | Criptografia dos dados em repouso | Marcos Antônio Ferreira de Araújo |
-| 1.1 | 18/10/2026 | Revisão: mapeamento dos dados protegidos, numeração dos requisitos, ciclo de vida e rotação de chaves, índice cego com HMAC-SHA256 | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
+| 1.1 | 03/11/2026 | Rotação de chaves Fernet | Marcos Antônio Ferreira de Araújo |

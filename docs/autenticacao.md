@@ -209,14 +209,20 @@ Expiração por inatividade evita forçar novo login a quem está usando o siste
 **Requisito:** O logout deverá invalidar a sessão ativa e impedir sua reutilização.
 
 **Decisão adotada**
-A view `usuarios/views_2fa.py::logout_usuario` é decorada com `@require_POST` e `@login_required`. É acionada pelo botão "Sair do Sistema", um `<form method="post">` com `{% csrf_token %}`. A view registra o evento de logout na auditoria **antes** de destruir a sessão e então chama `django.contrib.auth.logout()`, que apaga os dados da sessão no servidor e expira o cookie `sessionid`. Requisições GET para o logout são recusadas e a sessão é mantida.
+A view `usuarios/views_2fa.py::logout_usuario` é decorada com `@require_POST` e `@login_required`. É acionada pelo botão "Sair do Sistema", um `<form method="post">` com `{% csrf_token %}`. A view chama `django.contrib.auth.logout()`, que apaga a sessão no servidor e expira o cookie `sessionid`. Requisições GET para o logout são recusadas e a sessão é mantida.
+
+O registro do logout na auditoria não fica mais na view. Um receiver do sinal `user_logged_out` do Django (`usuarios/signals.py::registrar_logout`, conectado em `usuarios/apps.py`) grava o evento sempre que `logout()` é chamado, seja pela view do sistema, pela rota `/accounts/logout/` do allauth ou pelo `/admin/logout/`. O sinal é emitido antes de a sessão ser destruída, então o e-mail do usuário continua disponível para o log.
 
 **Justificativa técnica**
-Registrar antes do `logout()` preserva o e-mail do usuário no log, pois depois dele `request.user` passa a ser `AnonymousUser`. Usar POST com CSRF evita logout involuntário por prefetch, crawler ou requisição forjada de terceiros.
+As sessões ficam na tabela de sessões do banco, e o cookie `sessionid` é apenas a chave que aponta para uma linha dessa tabela. O `logout()` apaga a linha, então reenviar o cookie antigo aponta para uma chave inexistente: a requisição chega como anônima e é redirecionada ao login. Centralizar o registro no sinal garante que nenhum caminho de logout fique sem log e evita duplicar a lógica. Usar POST com CSRF evita logout involuntário por prefetch, crawler ou requisição forjada de terceiros.
 
 **Evidência**
-- Testes automatizados: `usuarios/test_ajustes_seguranca.py::test_logout_por_post_encerra_a_sessao` e `test_logout_por_get_nao_e_permitido_e_mantem_a_sessao`
-- Código-fonte: `usuarios/views_2fa.py::logout_usuario`
+- Testes automatizados (reutilização de cookie): `usuarios/test_ajustes_seguranca.py::LogoutInvalidaSessaoTests`, que loga, guarda o `sessionid`, faz logout, reenvia o cookie em um cliente novo e confere o redirecionamento ao login e a remoção da sessão do banco, tanto pela view do sistema quanto pela rota do allauth.
+- Testes automatizados (auditoria): `usuarios/test_ajustes_seguranca.py::LogoutRegistraAuditoriaTests`, que confere um único log de logout por caminho e nenhum log sem usuário autenticado.
+- Testes anteriores: `test_logout_por_post_encerra_a_sessao` e `test_logout_por_get_nao_e_permitido_e_mantem_a_sessao`
+- Comando: `python manage.py test usuarios.test_ajustes_seguranca.LogoutInvalidaSessaoTests usuarios.test_ajustes_seguranca.LogoutRegistraAuditoriaTests -v 2`
+- ![Print dos testes de logout e reutilização de cookie](evidencias/teste_logout_reuso_cookie.png)
+- Código-fonte: `usuarios/views_2fa.py::logout_usuario`, `usuarios/signals.py::registrar_logout`, `usuarios/apps.py`
 
 ---
 
@@ -272,5 +278,5 @@ As justificativas de cada decisão estão nas seções RS 1.1 a RS 1.11.
 |---|---|---|---|
 | 1.0 | 29/08/2026 | Criação do documento, cobrindo RS 1.1–1.12 para a primeira entrega. | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 30/08/2026 | Atualização das seções RS 1.5, 1.6 (2FA) e RS 1.10 (logout) | Marcos Antônio Ferreira de Araújo |
-| 1.2 | 30/08/2026 | Inserção da documentação do 2FA | Matheus de Castro Viana |
-| 1.3 | 18/10/2026 | Revisão geral: 2FA obrigatório e cifrado, bloqueio por força bruta no 2FA, cadastro fechado, logout somente por POST, auditoria em banco, IP do cliente, autorização por setor e inclusão da seção RS 1.12 | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
+| 1.2 | 30/08/2026 | Inserção da documentação do 2FA | Matheus Viana |
+| 1.4 | 02/11/2026 | Registro de logout migrado para o sinal `user_logged_out` (cobre view do sistema, allauth e admin) e testes de reutilização de cookie | Marcos Antônio Ferreira de Araújo |

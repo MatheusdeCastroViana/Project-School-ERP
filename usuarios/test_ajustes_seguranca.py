@@ -1,10 +1,13 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.contrib.sessions.models import Session
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from config.test_criptografia import chaves, gerar_chave
 from funcionarios.mascaras import mascarar_cpf, mascarar_telefone
 from funcionarios.models import Funcionario
+from usuarios.models import ConsentimentoLGPD, LogAuditoria
 from usuarios.models_2fa import Configuracao2FA
 
 Usuario = get_user_model()
@@ -22,6 +25,14 @@ class AjustesDeSegurancaBase(TestCase):
         self.usuario = Usuario.objects.create_user(
             email="ana@exemplo.com", password="SenhaTeste123!", funcionario=funcionario
         )
+        if not ConsentimentoLGPD.verificar_consentimento_ativo(self.usuario, "tratamento_dados"):
+            ConsentimentoLGPD.objects.create(
+                usuario=self.usuario,
+                tipo="tratamento_dados",
+                versao="1.0",
+                texto_hash="0" * 64,
+                status="aceito",
+            )
 
 
 class CadastroPublicoFechadoTests(AjustesDeSegurancaBase):
@@ -117,3 +128,61 @@ class MascarasTests(AjustesDeSegurancaBase):
         exportacao = self.client.get(reverse("usuarios:exportar_dados"))
         self.assertContains(exportacao, "123.456.789-09")
         self.assertContains(exportacao, "11987654321")
+
+
+class LogoutInvalidaSessaoTests(AjustesDeSegurancaBase):
+    def setUp(self):
+        super().setUp()
+        Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self.client.force_login(self.usuario)
+        self.chave_sessao = self.client.cookies[settings.SESSION_COOKIE_NAME].value
+
+    def _cliente_com_cookie_antigo(self):
+        cliente = Client()
+        cliente.cookies[settings.SESSION_COOKIE_NAME] = self.chave_sessao
+        return cliente
+
+    def test_cookie_da_sessao_funciona_antes_do_logout(self):
+        resposta = self._cliente_com_cookie_antigo().get(reverse("usuarios:consultar_dados"))
+        self.assertEqual(resposta.status_code, 200, resposta.get("Location"))
+
+    def test_cookie_antigo_e_recusado_depois_do_logout(self):
+        self.client.post(reverse("usuarios:logout"))
+        resposta = self._cliente_com_cookie_antigo().get(reverse("usuarios:consultar_dados"))
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn(reverse("account_login"), resposta.url)
+
+    def test_sessao_e_apagada_do_banco_depois_do_logout(self):
+        self.assertTrue(Session.objects.filter(session_key=self.chave_sessao).exists())
+        self.client.post(reverse("usuarios:logout"))
+        self.assertFalse(Session.objects.filter(session_key=self.chave_sessao).exists())
+
+    def test_logout_pela_rota_do_allauth_tambem_invalida_o_cookie(self):
+        self.client.post(reverse("account_logout"))
+        resposta = self._cliente_com_cookie_antigo().get(reverse("usuarios:consultar_dados"))
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn(reverse("account_login"), resposta.url)
+        self.assertFalse(Session.objects.filter(session_key=self.chave_sessao).exists())
+
+
+class LogoutRegistraAuditoriaTests(AjustesDeSegurancaBase):
+    def setUp(self):
+        super().setUp()
+        Configuracao2FA.objects.create(usuario=self.usuario, ativado=True)
+        self.client.force_login(self.usuario)
+
+    def _logs_de_logout(self):
+        return LogAuditoria.objects.filter(usuario=self.usuario, tipo_evento="logout")
+
+    def test_logout_pela_view_do_sistema_gera_um_unico_log(self):
+        self.client.post(reverse("usuarios:logout"))
+        self.assertEqual(self._logs_de_logout().count(), 1)
+
+    def test_logout_pela_rota_do_allauth_gera_um_unico_log(self):
+        self.client.post(reverse("account_logout"))
+        self.assertEqual(self._logs_de_logout().count(), 1)
+
+    def test_logout_sem_usuario_autenticado_nao_gera_log(self):
+        cliente = Client()
+        cliente.post(reverse("account_logout"))
+        self.assertEqual(LogAuditoria.objects.filter(tipo_evento="logout").count(), 0)

@@ -2,6 +2,11 @@
 
 Sistema web para gestão integrada de escolas profissionalizantes e de formação complementar.
 
+## Colaboradores do Projeto
+
+- Marcos Antônio Ferreira de Araújo
+- Matheus de Castro Viana
+
 ## 🌐 Acessar o sistema
 
 Acesse a versão online: [Project School ERP](https://project-school-erp.onrender.com)
