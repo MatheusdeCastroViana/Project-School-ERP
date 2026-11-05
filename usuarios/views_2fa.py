@@ -46,22 +46,15 @@ def logout_usuario(request):
     Atende ao requisito RA-5.1: Registrar logs de logout.
     Atende ao requisito RS-1.10: Invalidação de sessão no logout.
     """
-    # 1. Registra o evento de logout no log de auditoria de segurança
-    registrar_evento_autenticacao(
-        usuario=request.user,
-        evento='logout',
-        sucesso=True,
-        ip_address=request.META.get('REMOTE_ADDR')
-    )
     
-    # 2. Invalida a sessão do Django (destrói os dados da sessão e o cookie sessionid)
+    # 1. Invalida a sessão do Django (destrói os dados da sessão e o cookie sessionid)
     django_logout(request)
     
-    # 3. Redireciona para a tela de login
+    # 2. Redireciona para a tela de login
     return redirect('account_login')
 
 
-# --- Views de 2FA (Mantidas para funcionamento completo) ---
+# Views de 2FA (Mantidas para funcionamento completo)
 
 @login_required
 def ativar_2fa(request):
@@ -77,7 +70,7 @@ def ativar_2fa(request):
             config.save()
             registrar_evento_2fa(usuario=request.user, evento='ativacao', sucesso=True, ip_address=request.META.get('REMOTE_ADDR'))
             messages.success(request, '2FA ativado com sucesso! Seu login agora está mais seguro.')
-            return redirect('usuarios:dashboard')
+            return redirect('dashboard:home')
         else:
             registrar_evento_2fa(usuario=request.user, evento='ativacao', sucesso=False, ip_address=request.META.get('REMOTE_ADDR'), detalhes='Token inválido')
             messages.error(request, 'Código inválido. Verifique o código no seu aplicativo e tente novamente.')

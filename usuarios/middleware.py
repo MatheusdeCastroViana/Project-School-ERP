@@ -59,7 +59,9 @@ class ConsentimentoMiddleware:
         if request.user.is_authenticated:
             rotas_liberadas = [
                 '/usuarios/consentir/',
-                '/usuarios/gerenciar_consentimentos/',
+                # Rota real da tela de consentimentos e da revogação (meus-dados/consentimentos/...).
+                # O caminho antigo ('gerenciar_consentimentos/') não existe em urls.py.
+                '/usuarios/meus-dados/consentimentos/',
                 '/usuarios/ativar-2fa/',
                 '/usuarios/verify-2fa/',
                 '/usuarios/desativar-2fa/',

@@ -277,7 +277,7 @@ Implementado o fluxo de solicitação de exclusão com aprovação da Gestão (R
 
 1. **O titular solicita:** na tela de exclusão, o titular clica em "Confirmar solicitação de exclusão". O sistema cria uma `SolicitacaoExclusao` com status **PENDENTE** e registra no log de auditoria. Nenhum dado é alterado neste passo.
 2. **A Gestão analisa:** no Django Admin (`/admin/usuarios/solicitacaoexclusao/`), a Gestão visualiza a fila de solicitações pendentes e pode:
-   - **Aprovar:** executa a anonimização/exclusão dos dados. A aprovação e a execução rodam dentro de um mesmo `transaction.atomic()`: se qualquer passo falhar, nada é gravado e a solicitação continua PENDENTE.
+   - **Aprovar:** executa a anonimização/exclusão dos dados (veja o que anonimiza abaixo). A aprovação e a execução rodam dentro de um mesmo `transaction.atomic()`: se qualquer passo falhar, nada é gravado e a solicitação continua PENDENTE.
    - **Recusar:** mantém todos os dados intactos, registra justificativa e quem decidiu. A recusa só é aceita com justificativa preenchida.
 3. **Execução (após aprovação):** a função `executar_exclusao()` roda dentro de `transaction.atomic()` e:
    - Recusa a execução se o status não for `APROVADA` ou se já foi executada anteriormente.
@@ -321,6 +321,7 @@ A tabela `LogAuditoria` é imutável e **não é alterada** pela exclusão. O ev
 - **Admin:** `usuarios/admin.py::SolicitacaoExclusaoAdmin` (actions Aprovar / Recusar)
 - **Testes:** `usuarios/test_exclusao_lgpd.py`
 - **Evidência de teste:** `docs/evidencias/saida_teste_exclusao_lgpd.txt`
+- **Print do log anonimizado:** `docs/evidencias/log_anonimizado_apos_exclusao.png`
 
 ![Log anonimizado após exclusão](evidencias/log_anonimizado_apos_exclusao.png)
 
