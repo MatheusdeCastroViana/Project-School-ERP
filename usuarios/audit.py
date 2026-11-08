@@ -144,7 +144,7 @@ def registrar_solicitacao_exclusao(usuario, campos_removidos, ip_address=None):
     )
 
 
-def registrar_consentimento(usuario, tipo, versao, aceitou, ip_address=None):
+def registrar_consentimento(usuario, tipo, versao, aceitou, ip_address=None, detalhes=None):
     status = "Aceito" if aceitou else "Recusado"
 
     mensagem = (
@@ -161,5 +161,54 @@ def registrar_consentimento(usuario, tipo, versao, aceitou, ip_address=None):
         sucesso=True,
         mensagem=mensagem,
         ip_address=ip_address,
-        detalhes={'tipo': tipo, 'versao': versao, 'aceitou': bool(aceitou)},
+        detalhes={'tipo': tipo, 'versao': versao, 'aceitou': bool(aceitou), **(detalhes or {})},
+    )
+
+
+def registrar_exportacao_dados(usuario, grupos_exportados, formato, ip_address=None):
+    mensagem = (
+        f"Exportação de dados pessoais | Usuário: {usuario.email} | "
+        f"Grupos: {', '.join(grupos_exportados) if grupos_exportados else 'nenhum'} | "
+        f"Formato: {formato} | "
+        f"IP: {ip_address or 'N/A'}"
+    )
+
+    _gravar_no_arquivo(mensagem, True)
+    _gravar_no_banco(
+        usuario=usuario,
+        tipo_evento='exportacao_dados',
+        sucesso=True,
+        mensagem=mensagem,
+        ip_address=ip_address,
+        detalhes={'grupos_exportados': list(grupos_exportados or []), 'formato': formato},
+    )
+
+# FUNÇÃO ADICIONADA PARA SUPORTAR A VIEW DE LGPD
+
+def registrar_evento_lgpd(usuario, evento, sucesso, ip_address=None, detalhes=None):
+    """
+    Registra eventos genéricos de LGPD (ex: revogação de consentimento) 
+    nos logs de auditoria, mantendo a trilha de segurança.
+    """
+    email_usuario = usuario.email if hasattr(usuario, 'email') else str(usuario)
+    
+    mensagem = (
+        f"Evento LGPD | Usuário: {email_usuario} | "
+        f"Evento: {evento} | Sucesso: {sucesso} | "
+        f"IP: {ip_address or 'N/A'}"
+    )
+    
+    if detalhes:
+        mensagem += f" | Detalhes: {detalhes}"
+
+    _gravar_no_arquivo(mensagem, sucesso)
+    _gravar_no_banco(
+        usuario=usuario,
+        # Revogação de consentimento fica no mesmo tipo dos aceites, para que a trilha
+        # de consentimento (aceite/recusa/revogação) seja consultável por um único filtro.
+        tipo_evento='consentimento_lgpd' if evento == 'revogacao_consentimento' else 'outro',
+        sucesso=sucesso,
+        mensagem=mensagem,
+        ip_address=ip_address,
+        detalhes={'evento_lgpd': evento, **(detalhes or {})},
     )

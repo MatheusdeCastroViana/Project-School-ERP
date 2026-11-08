@@ -101,23 +101,27 @@ O **princípio da necessidade** (art. 6º, III da LGPD) exige que o tratamento d
 
 ### Decisão adotada
 
-Implementado um **popup de consentimento de cookies e tratamento de dados** que é exibido na parte inferior da tela quando o usuário acessa o sistema pela primeira vez (ou quando a versão da política é atualizada).
+O consentimento é solicitado **exclusivamente após** o usuário completar o login e a validação do 2FA. O `ConsentimentoMiddleware` intercepta a requisição e, caso o usuário não tenha consentido, o redireciona para a tela dedicada `/usuarios/consentir/`. 
 
-O popup oferece duas opções:
-1. **Aceitar:** Registra o consentimento no `localStorage` do navegador e, se o usuário estiver logado, envia uma requisição POST para a API `/usuarios/api/consentimento/` que registra o evento no log de auditoria.
-2. **Recusar:** Registra apenas no `localStorage` (sem enviar ao servidor), respeitando a decisão do usuário de não ser rastreado.
-
-O JavaScript do popup (`static/auth/js/lgpd_consent.js`) utiliza uma versão de consentimento (`CONSENT_VERSION = '1.0'`) que pode ser incrementada quando a política de privacidade for atualizada, forçando o usuário a consentir novamente.
+O fluxo de registro funciona da seguinte forma:
+1. O usuário visualiza o popup com os termos e clica em "Aceitar e Continuar".
+2. O frontend envia uma requisição `POST` para a API `/usuarios/api/consentimento/` com o tipo e a versão do consentimento.
+3. O backend valida o pedido contra um catálogo fechado: o `tipo` precisa ser uma das finalidades definidas no modelo e a `versao` precisa ser a versão **ativa** cadastrada em `VersaoTextoConsentimento` para aquele tipo. Tipo desconhecido, versão inexistente ou versão inativa resultam em resposta `400` e **nada é gravado**. O texto que gera o hash vem sempre do banco, nunca do cliente.
+4. Um registro **imutável** é criado no modelo `ConsentimentoLGPD`, contendo o hash SHA-256 do texto apresentado, IP, User-Agent e URL de origem.
+5. O botão "Recusar e Sair" utiliza um formulário com método `POST` direcionado à rota de logout, garantindo conformidade com as boas práticas de segurança (evitando logout via GET).
+6. O valor `aceitou` é interpretado de forma estrita (inclusive quando chega como o texto `"false"`). Uma recusa grava um registro com status `recusado` e o acesso ao sistema continua bloqueado até que haja um novo consentimento.
+7. Cada aceite ou recusa também gera um evento do tipo `consentimento_lgpd` no `LogAuditoria` (veja `docs/auditoria_logs.md`).
 
 ### Justificativa técnica
 
-O registro explícito de consentimento atende ao **art. 8º da LGPD**, que exige que o consentimento seja fornecido por escrito ou por outro meio que demonstre a manifestação de vontade do titular. O uso de `localStorage` com versionamento garante que o consentimento seja rastreável e que o usuário seja notificado de alterações na política.
+O registro explícito e centralizado no banco de dados atende ao **art. 8º da LGPD**, garantindo que a manifestação de vontade seja comprovável e vinculada à identidade do usuário autenticado. A remoção da dependência exclusiva do `localStorage` para a validação principal elimina vulnerabilidades de manipulação client-side. O uso de POST no logout previne ataques CSRF.
 
 ### Evidências
 
 - **Arquivos:** `usuarios/templates/usuarios/consentimento_popup.html`, `static/auth/js/lgpd_consent.js`
 - **Print:** `docs/evidencias/popup-de-consentimento.png`
-- **Log de auditoria:** `logs/auditoria_seguranca.log` (registra eventos de consentimento quando usuário está logado)
+- **Log de auditoria:** tabela `usuarios_logauditoria`, eventos `consentimento_lgpd`
+- **Código:** `usuarios/middleware.py::ConsentimentoMiddleware` e `usuarios/views_lgpd.py::registrar_consentimento_view`
 
 ---
 
@@ -129,21 +133,18 @@ O registro explícito de consentimento atende ao **art. 8º da LGPD**, que exige
 
 O popup de consentimento exibe explicitamente as finalidades do tratamento de dados:
 
-> "Ao continuar navegando, você consente com o tratamento de dados para: **autenticação, segurança, auditoria e melhoria da experiência**."
+> "Seus dados são utilizados estritamente para autenticação, segurança, auditoria e finalidades administrativas do ERP. Você pode revogar este consentimento a qualquer momento em 'Meus Dados'."
 
-Além disso, o popup inclui links diretos para a **Política de Privacidade** e **Termos de Uso**, onde cada finalidade é detalhada em seções específicas (ex: "2. Dados Coletados", "3. Finalidade do Tratamento").
-
-No backend, a API de consentimento (`registrar_consentimento_view`) recebe o parâmetro `tipo` (ex: 'privacidade', 'termos', 'marketing'), permitindo que diferentes finalidades sejam registradas separadamente.
+No backend, a view `registrar_consentimento_view` recebe e valida rigidamente o parâmetro `tipo` (ex: `'tratamento_dados'`) contra as escolhas permitidas no modelo. Além disso, o sistema busca a `VersaoTextoConsentimento` ativa no banco para aquele tipo, calcula o hash SHA-256 do texto oficial e o salva junto ao registro do usuário, garantindo que o consentimento esteja inequivocamente atrelado ao texto e à finalidade vigentes naquele momento.
 
 ### Justificativa técnica
 
-A associação entre consentimento e finalidade atende ao **art. 8º, §1º da LGPD**, que exige que o consentimento seja precedido de informações claras e completas sobre a finalidade do tratamento. Ao apresentar as finalidades de forma resumida no popup e detalhada na política, o sistema garante transparência e consente informado.
+A associação rígida entre consentimento, versão do texto e finalidade atende ao **art. 8º, §1º e §2º da LGPD**. O uso do hash do texto garante a integridade da prova de consentimento, impedindo que alegações futuras sobre "qual texto foi apresentado" sejam contestadas.
 
 ### Evidências
 
-- **Arquivo:** `usuarios/templates/usuarios/consentimento_popup.html` (texto do popup)
-- **Arquivo:** `usuarios/templates/usuarios/politica_privacidade.html` (seção "3. Finalidade do Tratamento")
-- **Código:** `usuarios/views_lgpd.py::registrar_consentimento_view` (parâmetro `tipo`)
+- **Código:** `usuarios/models.py::VersaoTextoConsentimento` e `ConsentimentoLGPD`
+- **Código:** `usuarios/views_lgpd.py::registrar_consentimento_view` (cálculo do `texto_hash` e validação do `tipo`)
 
 ---
 
@@ -153,22 +154,25 @@ A associação entre consentimento e finalidade atende ao **art. 8º, §1º da L
 
 ### Decisão adotada
 
-A revogação do consentimento pode ser realizada de duas formas:
+Ao clicar em revogar:
+1. O sistema **não apaga** o registro original (preservando a trilha de auditoria e a imutabilidade dos logs).
+2. O método `revogar()` do modelo cria um **novo registro** na tabela `ConsentimentoLGPD` com o `status` definido como `'revogado'`, registrando a `data_revogacao` e o IP do momento da ação.
+3. Um evento do tipo `consentimento_lgpd` (com `evento_lgpd = revogacao_consentimento`) é registrado no `LogAuditoria`, na mesma trilha dos aceites e recusas, para rastreabilidade administrativa.
 
-1. **Via navegador:** O usuário pode limpar o `localStorage` do navegador (chave `lgpd_consentimento_v1.0`), o que fará o popup aparecer novamente na próxima visita, permitindo que ele recuse o consentimento.
+A revogação só é aceita para o consentimento **aceito e vigente** da finalidade. Tentar revogar um registro antigo (já substituído por outro mais recente), uma recusa ou um registro já revogado não grava nada e exibe uma mensagem informativa; isso evita revogações duplicadas na trilha.
 
-2. **Via solicitação formal:** O usuário pode entrar em contato com o encarregado de dados (DPO) através do e-mail (informado na Política de Privacidade) para solicitar a revogação do consentimento registrado no backend.
-
-A função `registrar_consentimento` no `audit.py` aceita o parâmetro `aceitou` (booleano), permitindo registrar tanto o consentimento quanto a revogação no log de auditoria.
+**Interrupção do tratamento após a revogação.** O `ConsentimentoMiddleware` considera sempre o último registro de cada finalidade. Quando esse registro é `revogado`, as telas do sistema passam a redirecionar o usuário para `/usuarios/consentir/` (as exceções são a própria tela de consentimento, a gestão de consentimentos em `/usuarios/meus-dados/consentimentos/`, o logout, a Política de Privacidade, os Termos de Uso e as rotas de ativação do 2FA). O tratamento dos dados pelo sistema deixa de ocorrer para aquele usuário até que ele consinta novamente, o que gera um novo registro `aceito`. A tela de gestão continua acessível para que o titular consulte o histórico que comprova a revogação. O Django Admin, de uso restrito à equipe, não é interceptado por esse middleware.
 
 ### Justificativa técnica
 
-O **art. 8º, §5º da LGPD** estabelece que o titular pode revogar o consentimento a qualquer momento, mediante manifestação expressa. Ao fornecer múltiplos canais para revogação (navegador e contato direto com DPO), o sistema garante que o titular tenha controle efetivo sobre seus dados.
+O **art. 8º, §5º da LGPD** estabelece que o titular pode revogar o consentimento a qualquer momento. A abordagem de criar um novo registro de revogação (em vez de deletar ou alterar o anterior) é a prática recomendada de segurança da informação e auditoria, pois mantém o histórico completo das ações do titular, provando que o tratamento foi legítimo até o momento da revogação.
 
 ### Evidências
 
-- **Código:** `static/auth/js/lgpd_consent.js` 
-- **Código:** `usuarios/audit.py::registrar_consentimento` (parâmetro `aceitou`)
+- **Código:** `usuarios/views_lgpd.py::revogar_consentimento` e `usuarios/models.py::ConsentimentoLGPD.revogar`
+- **Código:** `usuarios/middleware.py::ConsentimentoMiddleware` (bloqueio após a revogação)
+- **Testes:** `usuarios/test_consentimento.py` (revogação grava `revogado`, registra o log, interrompe o acesso e permite consentir de novo)
+- **Código:** `usuarios/audit.py::registrar_evento_lgpd` (evento `revogacao_consentimento`) e `usuarios/audit.py::registrar_consentimento` (aceite e recusa)
 - **Arquivo:** `usuarios/templates/usuarios/politica_privacidade.html` (seção "10. Contato" com e-mail do DPO)
 
 ---
@@ -179,31 +183,25 @@ O **art. 8º, §5º da LGPD** estabelece que o titular pode revogar o consentime
 
 ### Decisão adotada
 
-O JavaScript do popup (`lgpd_consent.js`) armazena no `localStorage` um objeto JSON contendo:
+O modelo `ConsentimentoLGPD` armazena de forma estruturada e imutável no banco de dados PostgreSQL os seguintes campos de contexto para cada ação:
+- `usuario`: Vínculo com o usuário autenticado.
+- `tipo` e `versao`: Identificação da finalidade e da versão do texto.
+- `texto_hash`: Hash SHA-256 do texto exato apresentado ao usuário.
+- `status`: `'aceito'`, `'recusado'` ou `'revogado'`.
+- `ip_address` e `user_agent`: Contexto técnico da requisição.
+- `url_origem`: Página onde a ação foi realizada.
+- `data_consentimento` e `data_revogacao`: Timestamps automáticos do banco.
 
-```javascript
-{
-    versao: '1.0',
-    aceitou: true,
-    data: '2026-09-13T18:00:00.000Z',
-    url: 'http://127.0.0.1:8000/accounts/login/'
-}
-```
-
-No backend, a função registrar_consentimento no audit.py registra no log de auditoria:
-INFO 2026-09-13 18:00:00,000 audit Consentimento LGPD | Usuário: usuario@email.com | Tipo: privacidade | Versão: 1.0 | Status: Aceito | IP: 127.0.0.1
-
-A versão do consentimento (CONSENT_VERSION = '1.0') está definida como constante no JavaScript e pode ser incrementada quando a política for atualizada.
+Qualquer tentativa de executar `update()` ou `delete()` neste modelo via Django ORM lança uma exceção `PermissionDenied`, garantindo a imutabilidade exigida para fins de auditoria.
 
 ### Justificativa técnica
 
-O registro de data, hora e versão atende ao art. 8º, §2º da LGPD, que exige que o consentimento seja documentado de forma que possa ser comprovado posteriormente. O versionamento permite que o sistema identifique quais usuários consentiram com qual versão da política, facilitando a gestão de atualizações.
+O registro detalhado do contexto atende plenamente ao **art. 8º, §2º da LGPD**, que exige que o controlador possa comprovar o consentimento. A imutabilidade via `QuerySet` personalizado e a sobrescrita dos métodos `save` e `delete` no modelo impedem alterações e exclusões feitas pela aplicação (ORM, Django Admin e views). Essa proteção é de nível de aplicação: diferentemente da tabela `LogAuditoria`, a tabela `usuarios_consentimentolgpd` ainda não possui trigger no PostgreSQL, então um usuário com acesso direto ao banco poderia alterá-la por SQL. Uma melhoria possível é replicar para ela o trigger de imutabilidade criado na migration `0013`.
 
 ### Evidências
 
-- **Código:** `static/auth/js/lgpd_consent.js` (objeto dadosConsentimento)
-- **Código:** `usuarios/audit.py::registrar_consentimento` (registro no log)
-- **Log:** `logs/auditoria_seguranca.log` (exemplo de registro de consentimento)
+- **Código:** `usuarios/models.py::ConsentimentoLGPD` (campos e métodos `save`/`delete` protegidos)
+- **Código:** `usuarios/models.py::ConsentimentoLGPDQuerySet` (bloqueio de `update` e `delete` em massa)
 
 ## Funcionalidade de consulta aos dados do titular
 
@@ -259,7 +257,7 @@ Implementada a view exportar_dados `(usuarios/views_lgpd.py)` acessível via `/u
   ]
 }
 ```
-O arquivo é disponibilizado para download com o nome meus_dados_[email].json, em formato legível e estruturado.
+O arquivo é disponibilizado para download com o nome meus_dados.json, em formato legível e estruturado.
 
 ### Justificativa técnica
 
@@ -275,26 +273,57 @@ A exportação em JSON atende ao art. 18, V da LGPD (portabilidade dos dados), p
 
 ### Decisão adotada
 
-Implementada a view solicitar_exclusao (usuarios/views_lgpd.py) acessível via /usuarios/meus-dados/exclusao/, que permite ao usuário solicitar a exclusão de seus dados pessoais. A tela exibe explicitamente:
+Implementado o fluxo de solicitação de exclusão com aprovação da Gestão (RF 4.10), acessível via `/usuarios/meus-dados/exclusao/`. O fluxo funciona da seguinte forma:
 
-- **Dados que serão excluídos:** Telefone (único dado que pode ser excluído automaticamente)
-- **Dados que NÃO podem ser excluídos:** Nome, CPF, e-mail, senha, cargo, jornada (com justificativa para cada um)
+1. **O titular solicita:** na tela de exclusão, o titular clica em "Confirmar solicitação de exclusão". O sistema cria uma `SolicitacaoExclusao` com status **PENDENTE** e registra no log de auditoria. Nenhum dado é alterado neste passo.
+2. **A Gestão analisa:** no Django Admin (`/admin/usuarios/solicitacaoexclusao/`), a Gestão visualiza a fila de solicitações pendentes e pode:
+   - **Aprovar:** executa a anonimização/exclusão dos dados (veja o que anonimiza abaixo). A aprovação e a execução rodam dentro de um mesmo `transaction.atomic()`: se qualquer passo falhar, nada é gravado e a solicitação continua PENDENTE.
+   - **Recusar:** mantém todos os dados intactos, registra justificativa e quem decidiu. A recusa só é aceita com justificativa preenchida.
+3. **Execução (após aprovação):** a função `executar_exclusao()` roda dentro de `transaction.atomic()` e:
+   - Recusa a execução se o status não for `APROVADA` ou se já foi executada anteriormente.
+   - Anonimiza o **nome** do funcionário (troca por `Titular anonimizado #<id>`).
+   - Anonimiza o **CPF** (troca por valor não identificável, mantido cifrado) e o **cpf_indice** (recalculado com índice cego de valor não identificável, mantendo unicidade).
+   - Anonimiza o **telefone** (zera o campo).
+   - Marca o funcionário como **inativo** (`ativo = False`).
+   - Apaga as **jornadas de trabalho** vinculadas.
+   - Anonimiza o **e-mail** do usuário (troca por `anonimizado-<id>@invalido.local`).
+   - Torna a senha **inutilizável** (`set_unusable_password`).
+   - Marca o usuário como **inativo** (`is_active = False`).
+   - Invalida a **chave TOTP** (apaga `chave_secreta` e desativa `ativado`).
+   - Apaga os **tokens de recuperação de senha** (contêm IP e user-agent).
+   - Marca o `executado_em` na solicitação.
+   - Registra o evento no `LogAuditoria` (apenas IDs, sem CPF, telefone ou e-mail).
 
-Após a confirmação, o sistema:
+### O que fica retido (por obrigação legal / contratual)
+- **Nome e CPF** (`cpf` e `cpf_indice`): substituídos por valores não identificáveis, mas a linha do Funcionario é mantida por causa de FKs `PROTECT` e obrigações trabalhistas.
+- **LogAuditoria**: imutável por obrigação de segurança e rastreabilidade (LGPD art. 16).
+- **ConsentimentoLGPD**: prova de consentimento do titular (LGPD art. 8º, §2º).
+- **SolicitacaoExclusao**: prova do atendimento ao direito do titular (LGPD art. 18).
+- **Cargo/Setor**: não identificam a pessoa individualmente, são mantidos.
 
-- Remove o telefone do cadastro do funcionário (se existir)
-- Registra a solicitação no log de auditoria via registrar_solicitacao_exclusao
-- Exibe mensagem informando quais dados foram removidos e quais foram preservados
+### O que é anonimizado
+- Nome do funcionário
+- CPF e cpf_indice do funcionário
+- Telefone do funcionário
+- Jornadas de trabalho (apagadas)
+- E-mail da conta
+- Senha do usuário (tornada inutilizável)
+- Chave secreta TOTP (2FA)
+- Tokens de recuperação de senha
 
-### Justificativa técnica
-
-A exclusão parcial atende ao art. 18, VI da LGPD (eliminação dos dados pessoais tratados com o consentimento do titular), respeitando as exceções previstas no art. 16 (dados necessários para cumprimento de obrigação legal ou regulatória). A transparência sobre quais dados podem ou não ser excluídos evita frustração do titular e demonstra conformidade com a legislação.
+### Registros de auditoria
+A tabela `LogAuditoria` é imutável e **não é alterada** pela exclusão. O evento de exclusão é registrado apenas com IDs (sem dados pessoais do titular).
 
 ### Evidências
+- **Modelo:** `usuarios/models.py::SolicitacaoExclusao`
+- **View do titular:** `usuarios/views_lgpd.py::solicitar_exclusao`
+- **Execução:** `usuarios/views_lgpd.py::executar_exclusao`
+- **Admin:** `usuarios/admin.py::SolicitacaoExclusaoAdmin` (actions Aprovar / Recusar)
+- **Testes:** `usuarios/test_exclusao_lgpd.py`
+- **Evidência de teste:** `docs/evidencias/saida_teste_exclusao_lgpd.txt`
+- **Print do log anonimizado:** `docs/evidencias/log_anonimizado_apos_exclusao.png`
 
-- **Arquivo:** usuarios/templates/usuarios/solicitar_exclusao.html
-- **Código:** usuarios/views_lgpd.py::solicitar_exclusao
-- **Log:** logs/auditoria_seguranca.log (registro de solicitação de exclusão)
+![Log anonimizado após exclusão](evidencias/log_anonimizado_apos_exclusao.png)
 
 ## Fluxo de atendimento aos direitos documentado
 
@@ -320,3 +349,12 @@ A documentação do fluxo de atendimento atende ao art. 18 da LGPD e às diretri
 - **Arquivo:** `docs/lgpd/inventario_dados.md` (seção "O que é excluído de fato")
 - **Arquivo:** `usuarios/templates/usuarios/politica_privacidade.html` (seção "7. Direitos do Titular")
 - **Arquivo:** `usuarios/templates/usuarios/termos_uso.html` (seção "6. Privacidade")
+
+## Histórico de alterações
+
+| Versão | Data | Alteração | Responsável |
+|---|---|---|---|
+| 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
+| 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 03/11/2026 | Atualização no fluxo de exclusão com solicitação e aprovação do admin | Marcos Antônio Ferreira de Araújo |
+| 1.3 | 04/11/2026 | Consentimento persistido no banco com validação de finalidade e versão no servidor, revogação que interrompe o tratamento e correções (nome do arquivo exportado e escopo da imutabilidade) | Matheus de Castro Viana |

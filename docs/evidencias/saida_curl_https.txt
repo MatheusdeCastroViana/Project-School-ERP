@@ -1,0 +1,38 @@
+Evidência de comunicação HTTPS em produção — Projeto ERP Escolar
+Alvo:        https://project-school-erp.onrender.com
+Coletado em: 04/11/2026 (22:45 UTC), notebook pessoal, Windows 10.0.26200, rede doméstica (sem proxy corporativo)
+Observação:  o valor do cookie csrftoken foi omitido ("<valor omitido>"); o restante é a saída original.
+
+C:\Users\mathe>curl.exe -sI http://project-school-erp.onrender.com
+HTTP/1.1 301 Moved Permanently
+Date: Wed, 04 Nov 2026 22:45:35 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+Location: https://project-school-erp.onrender.com/
+cf-cache-status: DYNAMIC
+Server: cloudflare
+CF-RAY: a557265edb6eff14-GRU
+alt-svc: h3=":443"; ma=86400
+
+
+C:\Users\mathe>curl.exe -sI https://project-school-erp.onrender.com/accounts/login/
+HTTP/1.1 200 OK
+Date: Wed, 04 Nov 2026 22:45:50 GMT
+Content-Type: text/html; charset=utf-8
+Connection: keep-alive
+Cache-Control: max-age=0, no-cache, no-store, must-revalidate, private
+cross-origin-opener-policy: same-origin
+expires: Wed, 04 Nov 2026 22:45:49 GMT
+referrer-policy: same-origin
+rndr-id: 2352633f-1fae-4ac3
+Server: cloudflare
+Set-Cookie: csrftoken=<valor omitido>; expires=Wed, 03 Nov 2027 22:45:49 GMT; Max-Age=31449600; Path=/; SameSite=Lax; Secure
+strict-transport-security: max-age=300; includeSubDomains; preload
+vary: Cookie
+vary: Accept-Encoding
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-render-origin-server: gunicorn
+cf-cache-status: DYNAMIC
+CF-RAY: a55726ba4ae7ad79-GRU
+alt-svc: h3=":443"; ma=86400

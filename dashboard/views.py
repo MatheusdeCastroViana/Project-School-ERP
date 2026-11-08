@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 
 from usuarios.context_processors import _normalizar
+from usuarios.permissoes import setor_requerido
 
 
 @login_required(login_url='account_login')
@@ -19,18 +20,21 @@ def dashboard_view(request):
 
 
 @login_required
+@setor_requerido('gestao')
 def dashboard_gestao_view(request):
     context = {'setor_ativo': 'gestao', 'titulo': 'Painel de Gestão'}
     return render(request, 'base_dashboard.html', context)
 
 
 @login_required
+@setor_requerido('pedagogico')
 def dashboard_pedagogico_view(request):
     context = {'setor_ativo': 'pedagogico', 'titulo': 'Painel Pedagógico'}
     return render(request, 'base_dashboard.html', context)
 
 
 @login_required
+@setor_requerido('financeiro')
 def dashboard_financeiro_view(request):
     context = {'setor_ativo': 'financeiro', 'titulo': 'Painel Financeiro'}
     return render(request, 'base_dashboard.html', context)

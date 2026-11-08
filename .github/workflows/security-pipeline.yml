@@ -1,0 +1,258 @@
+name: School ERP - Security Pipeline
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    name: Build and Security validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: erp_test
+          POSTGRES_USER: erp_ci
+          POSTGRES_PASSWORD: ci_test_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp_ci -d erp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      # BEARER - SECURITY SCAN
+
+      - name: Bearer - Security analysis
+        uses: bearer/bearer-action@v2
+        with:
+          scanner: sast,secrets
+          severity: critical
+          format: json
+          output: bearer-security.json
+
+      # BEARER - PRIVACY SCAN
+
+      - name: Bearer - Privacy analysis
+        uses: bearer/bearer-action@v2
+        with:
+          config-file: bearer-privacy.yml
+
+      # DOCKER / DJANGO
+
+      - name: Build Docker image
+        run: docker build -t school-erp-ci .
+
+      - name: Generate temporary test environment
+        run: |
+          docker run --rm school-erp-ci python -c "
+          import secrets
+          from cryptography.fernet import Fernet
+          from django.core.management.utils import get_random_secret_key
+
+          print('SECRET_KEY=' + get_random_secret_key())
+          print('FIELD_ENCRYPTION_KEYS=' + Fernet.generate_key().decode())
+          print('BLIND_INDEX_KEY=' + secrets.token_urlsafe(48))
+          " > "$RUNNER_TEMP/generated_keys"
+
+          {
+            echo "DB_NAME=erp_test"
+            echo "DB_USER=erp_ci"
+            echo "DB_PASSWORD=ci_test_only_password"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=5432"
+            echo "DEBUG=True"
+            echo "ALLOWED_HOSTS=localhost,127.0.0.1"
+            echo "EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend"
+            echo "EMAIL_HOST=localhost"
+            echo "EMAIL_PORT=2525"
+            echo "EMAIL_USE_TLS=False"
+            echo "EMAIL_HOST_USER="
+            echo "EMAIL_HOST_PASSWORD="
+            echo "DEFAULT_FROM_EMAIL=ci@example.invalid"
+            cat "$RUNNER_TEMP/generated_keys"
+          } > "$RUNNER_TEMP/ci.env"
+
+          chmod 600 "$RUNNER_TEMP/ci.env"
+          rm "$RUNNER_TEMP/generated_keys"
+
+      - name: Django system check
+        run: |
+          docker run --rm \
+            --network host \
+            --env-file "$RUNNER_TEMP/ci.env" \
+            school-erp-ci \
+            python manage.py check --database default
+
+      - name: Apply database migrations
+        run: |
+          docker run --rm \
+            --network host \
+            --env-file "$RUNNER_TEMP/ci.env" \
+            school-erp-ci \
+            python manage.py migrate --noinput
+
+      - name: Start Django application
+        run: |
+          docker run -d \
+            --name school-erp-app \
+            --network host \
+            --env-file "$RUNNER_TEMP/ci.env" \
+            school-erp-ci
+
+      - name: Wait for Django
+        run: |
+          for i in $(seq 1 30); do
+            STATUS=$(curl -sS -o /dev/null \
+              -w "%{http_code}" \
+              http://127.0.0.1:8000/ || true)
+
+            if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
+              echo "Django is responding."
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "Django did not start successfully."
+          docker logs school-erp-app
+          exit 1
+
+      
+      # TRIVY - SUPPLY CHAIN SECURITY / SBOM
+
+      - name: Generate SBOM with Trivy
+        run: |
+          mkdir -p trivy-reports
+
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/trivy-reports:/reports" \
+            aquasec/trivy:latest \
+            image \
+              --format cyclonedx \
+              --output /reports/school-erp-sbom.cdx.json \
+              school-erp-ci
+
+      # OWASP ZAP - DAST
+
+      - name: Prepare ZAP reports directory
+        run: |
+          mkdir -p zap-reports
+          chmod 777 zap-reports
+
+      - name: OWASP ZAP Full Scan
+        id: zap_scan
+        run: |
+          docker run --rm \
+            --network host \
+            -v "$PWD/zap-reports:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py \
+              -t http://127.0.0.1:8000 \
+              -m 5 \
+              -T 5 \
+              -I \
+              -J zap-report.json \
+              -r zap-report.html
+
+      # BLOCK PIPELINE ON HIGH-RISK FINDINGS
+
+      - name: Block on high-risk ZAP findings
+        id: zap_gate
+        if: always() && steps.zap_scan.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          report_path = Path("zap-reports/zap-report.json")
+
+          if not report_path.exists():
+              print("ERROR: ZAP JSON report was not generated.")
+              sys.exit(1)
+
+          try:
+              with report_path.open(encoding="utf-8") as file:
+                  report = json.load(file)
+          except (json.JSONDecodeError, OSError) as error:
+              print(f"ERROR: Could not read ZAP report: {error}")
+              sys.exit(1)
+
+          if not isinstance(report.get("site"), list):
+              print("ERROR: Unexpected ZAP report structure.")
+              sys.exit(1)
+
+          high_findings = []
+
+          for site in report.get("site", []):
+              for alert in site.get("alerts", []):
+                  if str(alert.get("riskcode", "")) == "3":
+                      high_findings.append({
+                          "name": alert.get("name", "Unknown"),
+                          "url": site.get("@name", "Unknown URL"),
+                          "risk": alert.get("riskdesc", "High")
+                      })
+
+          if high_findings:
+              print("\nHIGH-RISK vulnerabilities detected:\n")
+
+              for finding in high_findings:
+                  print(f"- {finding['name']}")
+                  print(f"  Risk: {finding['risk']}")
+                  print(f"  URL: {finding['url']}\n")
+
+              print("Pipeline blocked due to high-risk findings.")
+              sys.exit(1)
+
+          print("No high-risk ZAP findings detected.")
+          PY
+
+      # REPORTS
+      
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-erp-security-reports
+          path: |
+            zap-reports/
+            bearer-security.json
+            bearer-privacy.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      
+      # TRIVY - SBOM ARTIFACT
+
+      - name: Upload SBOM CycloneDX
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: school-erp-sbom-cyclonedx
+          path: trivy-reports/school-erp-sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 14
+
+      # CLEANUP
+
+      - name: Stop application
+        if: always()
+        run: |
+          docker rm -f school-erp-app || true
+          rm -f "$RUNNER_TEMP/ci.env"
