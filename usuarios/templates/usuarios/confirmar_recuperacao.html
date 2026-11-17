@@ -103,6 +103,12 @@
         <div style="text-align: center; margin-top: 16px; font-size: 12px; color: var(--auth-muted);">
             {% trans "Link válido até:" %} {{ expira_em|date:"d/m/Y H:i" }}
         </div>
+
+        <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
+            <a href="{% url 'dashboard:home' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Voltar ao Painel" %}
+            </a>
+        </div>
     </div>
 </div>
 {% endblock content %}

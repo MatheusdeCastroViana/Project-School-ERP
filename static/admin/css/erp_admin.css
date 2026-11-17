@@ -1,0 +1,316 @@
+:root:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+    --erp-bg: #FAFAF9;
+    --erp-surface: #FFFFFF;
+    --erp-ink: #1C1917;
+    --erp-muted: #78716C;
+    --erp-border: #E7E5E4;
+    --erp-accent: #F4611E;
+    --erp-accent-deep: #D6520D;
+    --erp-accent-soft: #FFF1E9;
+    --erp-danger: #DC2626;
+
+    --primary: #FFF1E9;
+    --secondary: #F4611E;
+    --accent: #F4611E;
+    --primary-fg: #1C1917;
+
+    --body-fg: #1C1917;
+    --body-bg: #FFFFFF;
+    --body-quiet-color: #78716C;
+    --body-medium-color: #44403C;
+    --body-loud-color: #1C1917;
+
+    --header-color: #1C1917;
+    --header-branding-color: #1C1917;
+    --header-bg: #FFFFFF;
+    --header-link-color: #1C1917;
+
+    --breadcrumbs-fg: #78716C;
+    --breadcrumbs-link-fg: #B84508;
+    --breadcrumbs-bg: #FFF1E9;
+
+    --link-fg: #C2410C;
+    --link-hover-color: #9A3412;
+    --link-selected-fg: #C2410C;
+
+    --hairline-color: #E7E5E4;
+    --border-color: #D6D3D1;
+
+    --error-fg: #DC2626;
+
+    --message-debug-bg: #F5F5F4;
+    --message-info-bg: #FFF1E9;
+    --message-success-bg: #F0FDF4;
+    --message-warning-bg: #FFF1E9;
+    --message-error-bg: #FEF2F2;
+
+    --darkened-bg: #FAFAF9;
+    --selected-bg: #FFE4D6;
+    --selected-row: #FFF1E9;
+
+    --button-fg: #FFFFFF;
+    --button-bg: #F4611E;
+    --button-hover-bg: #D6520D;
+    --default-button-bg: #D6520D;
+    --default-button-hover-bg: #B84508;
+    --close-button-bg: #78716C;
+    --close-button-hover-bg: #44403C;
+    --delete-button-bg: #DC2626;
+    --delete-button-hover-bg: #B91C1C;
+
+    --object-tools-fg: #FFFFFF;
+    --object-tools-bg: #F4611E;
+    --object-tools-hover-bg: #D6520D;
+
+    --font-family-primary: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+    color-scheme: light;
+}
+
+body {
+    background: var(--erp-bg);
+    color: var(--erp-ink);
+}
+
+.theme-toggle {
+    display: none !important;
+}
+
+#header {
+    border-bottom: 3px solid var(--erp-accent);
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+#site-name a:link,
+#site-name a:visited {
+    color: var(--erp-ink);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-weight: 700;
+}
+
+#user-tools a:hover,
+#user-tools a:focus {
+    color: var(--erp-accent);
+    border-bottom-color: var(--erp-accent);
+}
+
+.breadcrumbs {
+    border-bottom: 1px solid var(--erp-border);
+}
+
+h1,
+h2,
+.module caption {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+.module,
+#changelist-filter {
+    border: 1px solid var(--erp-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+    background: var(--erp-accent-soft);
+    color: var(--erp-ink);
+    font-weight: 600;
+}
+
+.module h2 a,
+.module caption a {
+    color: var(--erp-ink);
+}
+
+#changelist-filter {
+    background: var(--erp-surface);
+}
+
+#changelist-filter h2 {
+    border-bottom: 2px solid var(--erp-accent);
+}
+
+#changelist-filter a {
+    color: var(--erp-muted);
+}
+
+#changelist-filter a:hover,
+#changelist-filter li.selected a {
+    color: var(--erp-accent-deep);
+    font-weight: 600;
+}
+
+thead th,
+.module thead th {
+    background: var(--erp-bg);
+    color: var(--erp-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--erp-border);
+}
+
+thead th a:link,
+thead th a:visited {
+    color: var(--erp-muted);
+}
+
+tbody tr:hover td,
+tbody tr:hover th {
+    background: var(--erp-accent-soft);
+}
+
+td,
+th {
+    border-bottom: 1px solid var(--erp-border);
+}
+
+.button,
+input[type=submit],
+input[type=button],
+.submit-row input,
+a.button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background 0.15s ease;
+}
+
+.submit-row {
+    background: var(--erp-bg);
+    border: 1px solid var(--erp-border);
+    border-radius: 8px;
+}
+
+.submit-row a.deletelink,
+.submit-row a.closelink {
+    border-radius: 8px;
+}
+
+.object-tools a:link,
+.object-tools a:visited {
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+input[type=text],
+input[type=password],
+input[type=email],
+input[type=url],
+input[type=number],
+input[type=tel],
+input[type=date],
+input[type=time],
+textarea,
+select {
+    background: var(--erp-surface);
+    color: var(--erp-ink);
+    border: 1px solid var(--erp-border);
+    border-radius: 8px;
+}
+
+input[type=text]:focus,
+input[type=password]:focus,
+input[type=email]:focus,
+input[type=url]:focus,
+input[type=number]:focus,
+input[type=tel]:focus,
+input[type=date]:focus,
+input[type=time]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--erp-accent);
+    box-shadow: 0 0 0 3px var(--erp-accent-soft);
+    outline: none;
+}
+
+input[type=checkbox],
+input[type=radio] {
+    accent-color: var(--erp-accent);
+}
+
+.required label,
+label.required {
+    color: var(--erp-ink);
+}
+
+.help,
+.helptext {
+    color: var(--erp-muted);
+}
+
+.messagelist li {
+    border-left: 4px solid var(--erp-accent);
+    border-radius: 8px;
+    color: var(--erp-ink);
+}
+
+.messagelist li.success {
+    border-left-color: #15803D;
+}
+
+.messagelist li.error {
+    border-left-color: var(--erp-danger);
+}
+
+.paginator a:link,
+.paginator a:visited {
+    border-radius: 6px;
+}
+
+.paginator a:hover {
+    background: var(--erp-accent-soft);
+    color: var(--erp-accent-deep);
+}
+
+.actions {
+    border-radius: 8px;
+}
+
+#toggle-nav-sidebar {
+    border-color: var(--erp-border);
+}
+
+.login #container {
+    border: 1px solid var(--erp-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(28, 25, 23, 0.06);
+}
+
+.selector .selector-chosen-title {
+    background: var(--erp-accent-soft);
+    color: var(--erp-ink);
+}
+
+.selector .selector-chosen-title label,
+.selector .selector-chosen-title h2 {
+    color: var(--erp-ink);
+}
+
+.selector .selector-chosen-title .helptext {
+    color: var(--erp-muted);
+}
+
+body .calendar td a:hover,
+body .calendar td a:focus,
+body .timelist a:hover,
+body .timelist a:focus {
+    background: var(--erp-accent);
+    color: #FFFFFF;
+}
+
+body .calendar td a:active,
+body .timelist a:active {
+    background: var(--erp-accent-deep);
+    color: #FFFFFF;
+}
+
+body .calendar td.selected a {
+    background: var(--erp-accent);
+    color: #FFFFFF;
+}

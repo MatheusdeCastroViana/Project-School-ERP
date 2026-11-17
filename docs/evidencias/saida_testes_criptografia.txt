@@ -1,0 +1,277 @@
+﻿python : Creating test database for alias 'default' ('test_erp_escola')...
+No linha:1 caractere:4
++    python manage.py test config funcionarios usuarios -v 2 2>&1 | Out ...
++    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Creating test d...erp_escola')...:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Found 81 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: allauth, dashboard, django_otp, google, messages, staticfiles
+  Apply all migrations: account, admin, auth, contenttypes, funcionarios, otp_totp, sessions, sites, socialaccount, usuarios
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying funcionarios.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying usuarios.0001_initial... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying funcionarios.0002_setor_cargo... OK
+  Applying funcionarios.0003_popular_setores... OK
+  Applying funcionarios.0004_alter_setor_options... OK
+  Applying funcionarios.0005_funcionario_cargo_funcionario_telefone... OK
+  Applying funcionarios.0006_jornadatrabalho... OK
+  Applying funcionarios.0007_funcionario_cpf_indice_alter_funcionario_cpf_and_more... OK
+  Applying funcionarios.0008_cifrar_cpf_telefone... OK
+  Applying funcionarios.0009_alter_funcionario_cpf_alter_funcionario_cpf_indice_and_more... OK
+  Applying otp_totp.0001_initial... OK
+  Applying otp_totp.0002_auto_20190420_0723... OK
+  Applying otp_totp.0003_add_timestamps... OK
+  Applying sessions.0001_initial... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data... OK
+  Applying usuarios.0002_alter_usuario_funcionario... OK
+  Applying usuarios.0003_configuracao2fa... OK
+  Applying usuarios.0004_tokenrecuperacaosenha... OK
+  Applying usuarios.0005_logauditoria... OK
+  Applying usuarios.0006_alter_configuracao2fa_chave_secreta... OK
+  Applying usuarios.0007_cifrar_chave_secreta... OK
+test_banco_recusa_cpf_duplicado_mesmo_com_formatacao_diferente 
+(funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_banco_recusa_cpf_duplicado_mesmo_com_formatacao_diferente) ... ok
+test_por_cpf_encontra_com_e_sem_mascara (funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_por_cpf_encontra_com_e_sem_mascara) 
+... ok
+test_por_cpf_nao_encontra_cpf_inexistente 
+(funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_por_cpf_nao_encontra_cpf_inexistente) ... ok
+test_validacao_aceita_o_proprio_registro (funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_validacao_aceita_o_proprio_registro) 
+... ok
+test_validacao_do_formulario_recusa_cpf_duplicado 
+(funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_validacao_do_formulario_recusa_cpf_duplicado) ... ok
+test_validacao_mantem_limite_de_tamanho_do_cpf 
+(funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_validacao_mantem_limite_de_tamanho_do_cpf) ... ok
+test_validacao_mantem_limite_de_tamanho_do_telefone 
+(funcionarios.test_cifrado.BuscaEUnicidadePorCpfTests.test_validacao_mantem_limite_de_tamanho_do_telefone) ... ok
+test_alterar_cpf_atualiza_o_indice (funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_alterar_cpf_atualiza_o_indice) ... ok
+test_cpf_e_telefone_estao_cifrados_no_banco 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_cpf_e_telefone_estao_cifrados_no_banco) ... ok
+test_filtro_direto_pelo_cpf_e_proibido (funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_filtro_direto_pelo_cpf_e_proibido) 
+... ok
+test_indice_e_gravado_a_partir_do_cpf_normalizado 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_indice_e_gravado_a_partir_do_cpf_normalizado) ... ok
+test_indice_nao_contem_o_cpf (funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_indice_nao_contem_o_cpf) ... ok
+test_leitura_pelo_model_devolve_os_valores_originais 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_leitura_pelo_model_devolve_os_valores_originais) ... ok
+test_limpar_telefone_como_na_exclusao_lgpd 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_limpar_telefone_como_na_exclusao_lgpd) ... ok
+test_salvar_de_novo_nao_cifra_duas_vezes 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_salvar_de_novo_nao_cifra_duas_vezes) ... ok
+test_telefone_vazio_continua_vazio_no_banco 
+(funcionarios.test_cifrado.FuncionarioCifradoNoBancoTests.test_telefone_vazio_continua_vazio_no_banco) ... ok
+test_consulta_de_dados_mostra_cpf_e_telefone_originais 
+(funcionarios.test_cifrado.TelasLgpdComDadosCifradosTests.test_consulta_de_dados_mostra_cpf_e_telefone_originais) ... ok
+test_exportacao_contem_cpf_e_telefone_originais 
+(funcionarios.test_cifrado.TelasLgpdComDadosCifradosTests.test_exportacao_contem_cpf_e_telefone_originais) ... ok
+test_adulteracao_no_banco_e_detectada (usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_adulteracao_no_banco_e_detectada) 
+... ok
+test_filtro_pela_chave_cifrada_e_proibido 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_filtro_pela_chave_cifrada_e_proibido) ... ok
+test_leitura_pelo_model_devolve_o_segredo_original 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_leitura_pelo_model_devolve_o_segredo_original) ... ok
+test_salvar_de_novo_nao_cifra_duas_vezes 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_salvar_de_novo_nao_cifra_duas_vezes) ... ok
+test_save_gera_chave_automatica_e_grava_cifrada 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_save_gera_chave_automatica_e_grava_cifrada) ... ok
+test_valor_cru_decifra_para_o_segredo_original 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_valor_cru_decifra_para_o_segredo_original) ... ok
+test_valor_em_texto_puro_no_banco_nao_e_aceito 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_valor_em_texto_puro_no_banco_nao_e_aceito) ... ok
+test_valor_no_banco_esta_cifrado (usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_valor_no_banco_esta_cifrado) ... ok
+test_verify_token_aceita_codigo_valido 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_verify_token_aceita_codigo_valido) ... ok
+test_verify_token_rejeita_codigo_invalido 
+(usuarios.test_2fa_cifrado.ChaveSecretaCifradaNoBancoTests.test_verify_token_rejeita_codigo_invalido) ... ok
+test_ativacao_com_codigo_invalido_nao_ativa_o_2fa 
+(usuarios.test_2fa_cifrado.FluxoDoisFatoresComChaveCifradaTests.test_ativacao_com_codigo_invalido_nao_ativa_o_2fa) ... WARNING 
+2026-10-10 14:24:32,365 audit Evento 2FA | Usußrio: fluxo@exemplo.com | Evento: ativacao | Sucesso: False | IP: 127.0.0.1 | Detalhes: 
+Token invßlido
+ok
+test_ativacao_com_codigo_valido_ativa_o_2fa 
+(usuarios.test_2fa_cifrado.FluxoDoisFatoresComChaveCifradaTests.test_ativacao_com_codigo_valido_ativa_o_2fa) ... INFO 2026-10-10 
+14:24:32,510 audit Evento 2FA | Usußrio: fluxo@exemplo.com | Evento: ativacao | Sucesso: True | IP: 127.0.0.1
+ok
+test_login_com_segundo_fator_invalido_nao_autentica 
+(usuarios.test_2fa_cifrado.FluxoDoisFatoresComChaveCifradaTests.test_login_com_segundo_fator_invalido_nao_autentica) ... WARNING 
+2026-10-10 14:24:32,613 audit Evento 2FA | Usußrio: fluxo@exemplo.com | Evento: verificacao_falha | Sucesso: False | IP: 127.0.0.1 | 
+Detalhes: Token invßlido
+ok
+test_login_com_segundo_fator_valido_autentica 
+(usuarios.test_2fa_cifrado.FluxoDoisFatoresComChaveCifradaTests.test_login_com_segundo_fator_valido_autentica) ... INFO 2026-10-10 
+14:24:32,720 audit Evento 2FA | Usußrio: fluxo@exemplo.com | Evento: verificacao_sucesso | Sucesso: True | IP: 127.0.0.1
+ok
+test_tela_de_ativacao_exibe_o_segredo_original 
+(usuarios.test_2fa_cifrado.FluxoDoisFatoresComChaveCifradaTests.test_tela_de_ativacao_exibe_o_segredo_original) ... ok
+test_log_registrado_na_solicitacao_email_encontrado 
+(usuarios.tests.RecuperacaoSenhaTests.test_log_registrado_na_solicitacao_email_encontrado) ... ok
+test_log_registrado_na_solicitacao_email_nao_encontrado 
+(usuarios.tests.RecuperacaoSenhaTests.test_log_registrado_na_solicitacao_email_nao_encontrado) ... ok
+test_solicitacao_com_email_inexistente_nao_gera_token 
+(usuarios.tests.RecuperacaoSenhaTests.test_solicitacao_com_email_inexistente_nao_gera_token) ... WARNING 2026-10-10 14:24:33,199 audit 
+RecuperaþÒo de senha solicitada | Email: naoexiste@exemplo.com | Usußrio encontrado: False | IP: 127.0.0.1
+ok
+test_solicitacao_gera_token_para_email_existente (usuarios.tests.RecuperacaoSenhaTests.test_solicitacao_gera_token_para_email_existente) 
+... INFO 2026-10-10 14:24:33,298 audit RecuperaþÒo de senha solicitada | Email: recuperacao@exemplo.com | Usußrio encontrado: True | IP: 
+127.0.0.1
+ok
+test_token_expirado_falha_e_loga (usuarios.tests.RecuperacaoSenhaTests.test_token_expirado_falha_e_loga) ... INFO 2026-10-10 
+14:24:33,396 audit RecuperaþÒo de senha solicitada | Email: recuperacao@exemplo.com | Usußrio encontrado: True | IP: 127.0.0.1
+ok
+test_token_inexistente_loga_falha (usuarios.tests.RecuperacaoSenhaTests.test_token_inexistente_loga_falha) ... ok
+test_token_reutilizado_falha_e_loga (usuarios.tests.RecuperacaoSenhaTests.test_token_reutilizado_falha_e_loga) ... INFO 2026-10-10 
+14:24:33,599 audit RecuperaþÒo de senha solicitada | Email: recuperacao@exemplo.com | Usußrio encontrado: True | IP: 127.0.0.1
+INFO 2026-10-10 14:24:33,697 audit RecuperaþÒo de senha finalizada | Usußrio: recuperacao@exemplo.com | Sucesso: True
+ok
+test_token_valido_permite_trocar_senha_e_loga_sucesso 
+(usuarios.tests.RecuperacaoSenhaTests.test_token_valido_permite_trocar_senha_e_loga_sucesso) ... INFO 2026-10-10 14:24:33,795 audit 
+RecuperaþÒo de senha solicitada | Email: recuperacao@exemplo.com | Usußrio encontrado: True | IP: 127.0.0.1
+ok
+test_hash_usa_argon2id (usuarios.tests.UsuarioArgon2PasswordHasherTests.test_hash_usa_argon2id) ... ok
+test_parametros_de_custo_configurados (usuarios.tests.UsuarioArgon2PasswordHasherTests.test_parametros_de_custo_configurados) ... ok
+test_senha_correta_autentica (usuarios.tests.UsuarioArgon2PasswordHasherTests.test_senha_correta_autentica) ... ok
+test_senha_incorreta_nao_autentica (usuarios.tests.UsuarioArgon2PasswordHasherTests.test_senha_incorreta_nao_autentica) ... ok
+test_tempo_de_hash_dentro_do_esperado (usuarios.tests.UsuarioArgon2PasswordHasherTests.test_tempo_de_hash_dentro_do_esperado) ... ok
+test_configuracao_padrao_nao_tem_erros (config.test_campos.ChecksTests.test_configuracao_padrao_nao_tem_erros) ... ok
+test_db_index_gera_erro (config.test_campos.ChecksTests.test_db_index_gera_erro) ... ok
+test_unique_gera_erro (config.test_campos.ChecksTests.test_unique_gera_erro) ... ok
+test_gravacao_cifra_o_valor (config.test_campos.CifraEDecifraTests.test_gravacao_cifra_o_valor) ... ok
+test_ida_e_volta_pelos_ganchos (config.test_campos.CifraEDecifraTests.test_ida_e_volta_pelos_ganchos) ... ok
+test_leitura_de_texto_puro_levanta_erro (config.test_campos.CifraEDecifraTests.test_leitura_de_texto_puro_levanta_erro) ... ok
+test_none_passa_inalterado_nos_dois_sentidos (config.test_campos.CifraEDecifraTests.test_none_passa_inalterado_nos_dois_sentidos) ... ok
+test_string_vazia_passa_inalterada_nos_dois_sentidos 
+(config.test_campos.CifraEDecifraTests.test_string_vazia_passa_inalterada_nos_dois_sentidos) ... ok
+test_to_python_nao_decifra (config.test_campos.CifraEDecifraTests.test_to_python_nao_decifra) ... ok
+test_isnull_continua_permitido (config.test_campos.LookupsTests.test_isnull_continua_permitido) ... ok
+test_lookups_de_comparacao_sao_proibidos (config.test_campos.LookupsTests.test_lookups_de_comparacao_sao_proibidos) ... ok
+test_formfield_nao_usa_textarea (config.test_campos.TipoEFormularioTests.test_formfield_nao_usa_textarea) ... ok
+test_tipo_interno_e_textfield (config.test_campos.TipoEFormularioTests.test_tipo_interno_e_textfield) ... ok
+test_chave_malformada_levanta_erro_de_configuracao 
+(config.test_criptografia.ConfiguracaoTests.test_chave_malformada_levanta_erro_de_configuracao) ... ok
+test_mensagem_de_erro_nao_expoe_a_chave (config.test_criptografia.ConfiguracaoTests.test_mensagem_de_erro_nao_expoe_a_chave) ... ok
+test_sem_chave_levanta_erro_de_configuracao (config.test_criptografia.ConfiguracaoTests.test_sem_chave_levanta_erro_de_configuracao) ... 
+ok
+test_ida_e_volta_com_acentos (config.test_criptografia.IdaEVoltaTests.test_ida_e_volta_com_acentos) ... ok
+test_ida_e_volta_texto_simples (config.test_criptografia.IdaEVoltaTests.test_ida_e_volta_texto_simples) ... ok
+test_mesmo_texto_gera_tokens_diferentes (config.test_criptografia.IdaEVoltaTests.test_mesmo_texto_gera_tokens_diferentes) ... ok
+test_token_difere_do_texto_e_nao_o_contem (config.test_criptografia.IdaEVoltaTests.test_token_difere_do_texto_e_nao_o_contem) ... ok
+test_chave_errada_levanta_erro (config.test_criptografia.IntegridadeTests.test_chave_errada_levanta_erro) ... ok
+test_mensagem_de_erro_nao_expoe_token_nem_texto 
+(config.test_criptografia.IntegridadeTests.test_mensagem_de_erro_nao_expoe_token_nem_texto) ... ok
+test_texto_puro_nao_e_aceito_como_token (config.test_criptografia.IntegridadeTests.test_texto_puro_nao_e_aceito_como_token) ... ok
+test_token_adulterado_levanta_erro (config.test_criptografia.IntegridadeTests.test_token_adulterado_levanta_erro) ... ok
+test_dado_antigo_continua_legivel_apos_adicionar_chave_nova 
+(config.test_criptografia.RotacaoTests.test_dado_antigo_continua_legivel_apos_adicionar_chave_nova) ... ok
+test_novos_dados_usam_a_chave_mais_nova (config.test_criptografia.RotacaoTests.test_novos_dados_usam_a_chave_mais_nova) ... ok
+test_rotacionar_migra_o_token_para_a_chave_nova (config.test_criptografia.RotacaoTests.test_rotacionar_migra_o_token_para_a_chave_nova) 
+... ok
+test_rotacionar_token_invalido_levanta_erro (config.test_criptografia.RotacaoTests.test_rotacionar_token_invalido_levanta_erro) ... ok
+test_chave_curta_levanta_erro_sem_expor_a_chave 
+(config.test_indice_cego.IndiceCegoTests.test_chave_curta_levanta_erro_sem_expor_a_chave) ... ok
+test_chaves_diferentes_geram_indices_diferentes 
+(config.test_indice_cego.IndiceCegoTests.test_chaves_diferentes_geram_indices_diferentes) ... ok
+test_formato_e_hexadecimal_de_64_caracteres (config.test_indice_cego.IndiceCegoTests.test_formato_e_hexadecimal_de_64_caracteres) ... ok
+test_indice_nao_contem_o_valor_original (config.test_indice_cego.IndiceCegoTests.test_indice_nao_contem_o_valor_original) ... ok
+test_mesmo_valor_gera_mesmo_indice (config.test_indice_cego.IndiceCegoTests.test_mesmo_valor_gera_mesmo_indice) ... ok
+test_sem_chave_levanta_erro_de_configuracao (config.test_indice_cego.IndiceCegoTests.test_sem_chave_levanta_erro_de_configuracao) ... ok
+test_valores_diferentes_geram_indices_diferentes 
+(config.test_indice_cego.IndiceCegoTests.test_valores_diferentes_geram_indices_diferentes) ... ok
+
+----------------------------------------------------------------------
+Ran 81 tests in 4.150s
+
+OK
+Destroying test database for alias 'default' ('test_erp_escola')...
+
+  Applying usuarios.0008_alter_configuracao2fa_chave_secreta... OK
+System check identified no issues (0 silenced).
+
+============================================================
+LINK DE RECUPERAÃ├O DE SENHA (Ambiente de Desenvolvimento)
+============================================================
+Usußrio: recuperacao@exemplo.com
+Token: 5e381e692f24698efa07cf5d61733b0b46b61b8ffd723e4e85041c0b8ea9ec35
+Expira em: 2026-10-11 17:24:33.002941+00:00
+Link: http://testserver/usuarios/recuperar-senha/5e381e692f24698efa07cf5d61733b0b46b61b8ffd723e4e85041c0b8ea9ec35/
+============================================================
+
+
+============================================================
+LINK DE RECUPERAÃ├O DE SENHA (Ambiente de Desenvolvimento)
+============================================================
+Usußrio: recuperacao@exemplo.com
+Token: 21c61798416acc7bd4ce1f12b1f52c9cd802fcdb10f7f448aa592b4288b4376e
+Expira em: 2026-10-11 17:24:33.299944+00:00
+Link: http://testserver/usuarios/recuperar-senha/21c61798416acc7bd4ce1f12b1f52c9cd802fcdb10f7f448aa592b4288b4376e/
+============================================================
+
+
+============================================================
+LINK DE RECUPERAÃ├O DE SENHA (Ambiente de Desenvolvimento)
+============================================================
+Usußrio: recuperacao@exemplo.com
+Token: 84bff981d2ed5c6e5ec8c8de1d95084dd67a54942c05033f5ee66b5696bf4004
+Expira em: 2026-10-11 17:24:33.398185+00:00
+Link: http://testserver/usuarios/recuperar-senha/84bff981d2ed5c6e5ec8c8de1d95084dd67a54942c05033f5ee66b5696bf4004/
+============================================================
+
+
+============================================================
+LINK DE RECUPERAÃ├O DE SENHA (Ambiente de Desenvolvimento)
+============================================================
+Usußrio: recuperacao@exemplo.com
+Token: fd9a174edf394e049eacc1a3aef2c18896624e6dd67358f223a838c33c1ede19
+Expira em: 2026-10-11 17:24:33.601191+00:00
+Link: http://testserver/usuarios/recuperar-senha/fd9a174edf394e049eacc1a3aef2c18896624e6dd67358f223a838c33c1ede19/
+============================================================
+
+
+============================================================
+LINK DE RECUPERAÃ├O DE SENHA (Ambiente de Desenvolvimento)
+============================================================
+Usußrio: recuperacao@exemplo.com
+Token: e8c0f7e63c5aa3103570537f0dfd6404ff241660ca1f3cc294c3048b179778d3
+Expira em: 2026-10-11 17:24:33.796408+00:00
+Link: http://testserver/usuarios/recuperar-senha/e8c0f7e63c5aa3103570537f0dfd6404ff241660ca1f3cc294c3048b179778d3/
+============================================================
+
+
+Tempo de hash (Argon2id, t=5, m=32768, p=1): 90.64 ms

@@ -1,0 +1,20 @@
+Recuperação de Senha - ERP Escola Profissionalizante
+=====================================================
+
+Olá,
+
+Recebemos uma solicitação de recuperação de senha para a sua conta.
+Acesse o link abaixo para definir uma nova senha:
+
+{{ link_recuperacao }}
+
+Informações importantes:
+- Este link é válido por 24 horas
+- Expira em: {{ expira_em|date:"d/m/Y H:i" }}
+- Se você não solicitou esta recuperação, ignore este e-mail
+
+Se o link acima não funcionar, copie e cole a URL completa no seu navegador.
+
+---
+Este é um e-mail automático. Por favor, não responda.
+© 2026 ERP Escola Profissionalizante. Todos os direitos reservados.

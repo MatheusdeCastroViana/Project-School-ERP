@@ -42,18 +42,14 @@
             
             <p class="auth-text" style="text-align: left; font-size: 13px; margin-bottom: 16px;">
                 {% if tem_2fa %}
-                    {% trans "Sua conta está protegida por 2FA. Para desativar, utilize o botão abaixo." %}
+                    {% trans "Sua conta está protegida por 2FA. Ele é obrigatório para todos os usuários." %}
                 {% else %}
-                    {% trans "Recomendamos ativar o 2FA para proteger sua conta contra acessos não autorizados." %}
+                    {% trans "O 2FA é obrigatório. Ative-o para liberar o acesso ao sistema." %}
                 {% endif %}
             </p>
 
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                {% if tem_2fa %}
-                    <a href="{% url 'usuarios:desativar_2fa' %}" class="auth-btn auth-btn--outline" style="flex: 1; text-align: center;">
-                        {% trans "Desativar 2FA" %}
-                    </a>
-                {% else %}
+                {% if not tem_2fa %}
                     <a href="{% url 'usuarios:ativar_2fa' %}" class="auth-btn auth-btn--primary" style="flex: 1; text-align: center;">
                         {% trans "Ativar 2FA" %}
                     </a>
@@ -65,35 +61,24 @@
             <details class="atividade-conta__detalhes">
                 <summary class="atividade-conta__resumo">
                     <span class="atividade-conta__titulo">{% trans "Atividade da conta" %}</span>
-                    <span class="atividade-conta__selo">{% trans "exemplo" %}</span>
                 </summary>
 
                 <ul class="atividade-conta__lista">
-                    <li class="atividade-conta__item">
-                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
-                        <span class="atividade-conta__texto">{% trans "Login realizado" %}</span>
-                        <span class="atividade-conta__data">20/09/2026 14:32</span>
-                    </li>
-                    <li class="atividade-conta__item">
-                        <span class="atividade-conta__icone atividade-conta__icone--falha" aria-hidden="true">✕</span>
-                        <span class="atividade-conta__texto">{% trans "Tentativa de login com senha incorreta" %}</span>
-                        <span class="atividade-conta__data">20/09/2026 14:29</span>
-                    </li>
-                    <li class="atividade-conta__item">
-                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
-                        <span class="atividade-conta__texto">{% trans "2FA ativado" %}</span>
-                        <span class="atividade-conta__data">19/09/2026 21:05</span>
-                    </li>
-                    <li class="atividade-conta__item">
-                        <span class="atividade-conta__icone atividade-conta__icone--sucesso" aria-hidden="true">✓</span>
-                        <span class="atividade-conta__texto">{% trans "Senha redefinida por recuperação" %}</span>
-                        <span class="atividade-conta__data">18/09/2026 09:47</span>
-                    </li>
-                    <li class="atividade-conta__item">
-                        <span class="atividade-conta__icone atividade-conta__icone--falha" aria-hidden="true">✕</span>
-                        <span class="atividade-conta__texto">{% trans "Código 2FA inválido" %}</span>
-                        <span class="atividade-conta__data">17/09/2026 18:12</span>
-                    </li>
+                    {% if atividades %}
+                        {% for atividade in atividades %}
+                            <li class="atividade-conta__item">
+                                <span class="atividade-conta__icone {{ atividade.icone }}" aria-hidden="true">
+                                    {% if atividade.icone == 'atividade-conta__icone--sucesso' %}✓{% else %}✕{% endif %}
+                                </span>
+                                <span class="atividade-conta__texto">{% trans atividade.texto %}</span>
+                                <span class="atividade-conta__data">{{ atividade.data_hora|date:"d/m/Y H:i" }}</span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="atividade-conta__vazio">
+                            {% trans "Nenhuma atividade recente registrada." %}
+                        </li>
+                    {% endif %}
                 </ul>
             </details>
         </div>
@@ -110,6 +95,12 @@
                     {% trans "Sair do Sistema" %}
                 </button>
             </form>
+        </div>
+
+        <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">
+            <a href="{% url 'dashboard:home' %}" class="auth-btn auth-btn--outline" style="width: 100%; text-align: center; display: block;">
+                {% trans "Voltar ao Painel" %}
+            </a>
         </div>
     </div>
 </div>

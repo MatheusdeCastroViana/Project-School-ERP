@@ -1,0 +1,76 @@
+name: School ERP - DevSecOps Pipeline
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets-scan:
+    name: TruffleHog - Secrets scanning
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: TruffleHog - Scan full git history
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo:ro" \
+            trufflesecurity/trufflehog:latest \
+            git file:///repo \
+              --fail \
+              --no-update
+
+  sca:
+    name: Trivy - Dependency vulnerabilities (SCA)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Trivy - Scan dependencies
+        run: |
+          docker run --rm \
+            -v "$PWD:/project:ro" \
+            aquasec/trivy:latest \
+            fs \
+              --scanners vuln \
+              --severity HIGH,CRITICAL \
+              --ignore-unfixed \
+              --exit-code 1 \
+              /project
+
+  sast:
+    name: Semgrep - Static analysis (SAST)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Semgrep - Scan source code
+        run: |
+          docker run --rm \
+            -v "$PWD:/src" \
+            semgrep/semgrep:latest \
+            semgrep scan \
+              --config p/python \
+              --config p/django \
+              --severity ERROR \
+              --error \
+              --metrics off

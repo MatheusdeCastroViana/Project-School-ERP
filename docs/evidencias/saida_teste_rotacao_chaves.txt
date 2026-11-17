@@ -1,0 +1,80 @@
+Creating test database for alias 'default' ('test_erp_escola')...
+Found 1 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: allauth, anymail, dashboard, django_otp, google, messages, staticfiles
+  Apply all migrations: account, admin, auth, contenttypes, funcionarios, otp_totp, sessions, sites, socialaccount, usuarios
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying funcionarios.0001_initial... OK
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying usuarios.0001_initial... OK
+  Applying account.0001_initial... OK
+  Applying account.0002_email_max_length... OK
+  Applying account.0003_alter_emailaddress_create_unique_verified_email... OK
+  Applying account.0004_alter_emailaddress_drop_unique_email... OK
+  Applying account.0005_emailaddress_idx_upper_email... OK
+  Applying account.0006_emailaddress_lower... OK
+  Applying account.0007_emailaddress_idx_email... OK
+  Applying account.0008_emailaddress_unique_primary_email_fixup... OK
+  Applying account.0009_emailaddress_unique_primary_email... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying funcionarios.0002_setor_cargo... OK
+  Applying funcionarios.0003_popular_setores... OK
+  Applying funcionarios.0004_alter_setor_options... OK
+  Applying funcionarios.0005_funcionario_cargo_funcionario_telefone... OK
+  Applying funcionarios.0006_jornadatrabalho... OK
+  Applying funcionarios.0007_funcionario_cpf_indice_alter_funcionario_cpf_and_more... OK
+  Applying funcionarios.0008_cifrar_cpf_telefone... OK
+  Applying funcionarios.0009_alter_funcionario_cpf_alter_funcionario_cpf_indice_and_more... OK
+  Applying otp_totp.0001_initial... OK
+  Applying otp_totp.0002_auto_20190420_0723... OK
+  Applying otp_totp.0003_add_timestamps... OK
+  Applying sessions.0001_initial... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+  Applying socialaccount.0001_initial... OK
+  Applying socialaccount.0002_token_max_lengths... OK
+  Applying socialaccount.0003_extra_data_default_dict... OK
+  Applying socialaccount.0004_app_provider_id_settings... OK
+  Applying socialaccount.0005_socialtoken_nullable_app... OK
+  Applying socialaccount.0006_alter_socialaccount_extra_data... OK
+  Applying usuarios.0002_alter_usuario_funcionario... OK
+  Applying usuarios.0003_configuracao2fa... OK
+  Applying usuarios.0004_tokenrecuperacaosenha... OK
+  Applying usuarios.0005_logauditoria... OK
+  Applying usuarios.0006_alter_configuracao2fa_chave_secreta... OK
+  Applying usuarios.0007_cifrar_chave_secreta... OK
+  Applying usuarios.0008_alter_configuracao2fa_chave_secreta... OK
+  Applying usuarios.0009_alter_logauditoria_tipo_evento... OK
+  Applying usuarios.0010_configuracao2fa_tentativas_falhas_and_more... OK
+  Applying usuarios.0011_versaotextoconsentimento_consentimentolgpd... OK
+  Applying usuarios.0012_auto_20261018_2343... OK
+  Applying usuarios.0013_bloquear_alteracao_logauditoria... OK
+  Applying usuarios.0014_alter_logauditoria_usuario... OK
+  Applying usuarios.0015_solicitacaoexclusao...test_depois_de_rotacionar_decifra_somente_com_chave_nova (funcionarios.test_rotacao_chaves.RotacaoChavesTests.test_depois_de_rotacionar_decifra_somente_com_chave_nova) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.169s
+
+OK
+Destroying test database for alias 'default' ('test_erp_escola')...
+ OK
+System check identified no issues (0 silenced).
+Rotacionados 2 registros com a chave mais nova.

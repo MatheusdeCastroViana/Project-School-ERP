@@ -1,0 +1,14 @@
+{
+  "site": [
+    {
+      "@name": "http://localhost:8000",
+      "alerts": [
+        {
+          "name": "Synthetic High Risk Finding",
+          "riskcode": "3",
+          "riskdesc": "High"
+        }
+      ]
+    }
+  ]
+}

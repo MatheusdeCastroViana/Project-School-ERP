@@ -8,7 +8,7 @@ from funcionarios.models import Funcionario
 from django.contrib.auth.hashers import make_password
 import time
 
-from usuarios.models_recuperacao import TokenRecuperacaoSenha
+from usuarios.models_recuperacao import TokenRecuperacaoSenha, hash_token
 
 Usuario = get_user_model()
 
@@ -102,11 +102,10 @@ class RecuperacaoSenhaTests(TestCase):
         self.assertTrue(any("Usuário encontrado: False" in m for m in logs.output))
 
     def test_token_valido_permite_trocar_senha_e_loga_sucesso(self):
-        self.solicitar_recuperacao(self.usuario.email)
-        token_obj = self.obter_token_gerado()
+        token_obj, token_cru = TokenRecuperacaoSenha.gerar(usuario=self.usuario)
 
         with self.assertLogs("auditoria_seguranca", level="INFO") as logs:
-            resposta = self.client.post(self.url_confirmacao(token_obj.token), {
+            resposta = self.client.post(self.url_confirmacao(token_cru), {
                 "senha1": self.senha_nova,
                 "senha2": self.senha_nova,
             })
@@ -118,27 +117,25 @@ class RecuperacaoSenhaTests(TestCase):
         self.assertTrue(check_password(self.senha_nova, self.usuario.password))
 
     def test_token_reutilizado_falha_e_loga(self):
-        self.solicitar_recuperacao(self.usuario.email)
-        token_obj = self.obter_token_gerado()
+        token_obj, token_cru = TokenRecuperacaoSenha.gerar(usuario=self.usuario)
 
-        self.client.post(self.url_confirmacao(token_obj.token), {
+        self.client.post(self.url_confirmacao(token_cru), {
             "senha1": self.senha_nova,
             "senha2": self.senha_nova,
         })
 
         with self.assertLogs("auditoria_seguranca", level="WARNING") as logs:
-            resposta = self.client.get(self.url_confirmacao(token_obj.token))
+            resposta = self.client.get(self.url_confirmacao(token_cru))
 
         self.assertTrue(any("já utilizado" in m for m in logs.output))
 
     def test_token_expirado_falha_e_loga(self):
-        self.solicitar_recuperacao(self.usuario.email)
-        token_obj = self.obter_token_gerado()
+        token_obj, token_cru = TokenRecuperacaoSenha.gerar(usuario=self.usuario)
         token_obj.expira_em = timezone.now() - timedelta(hours=1)
         token_obj.save(update_fields=['expira_em'])
 
         with self.assertLogs("auditoria_seguranca", level="WARNING") as logs:
-            self.client.get(self.url_confirmacao(token_obj.token))
+            self.client.get(self.url_confirmacao(token_cru))
 
         self.assertTrue(any("expirado" in m for m in logs.output))
 
@@ -147,3 +144,9 @@ class RecuperacaoSenhaTests(TestCase):
             self.client.get(self.url_confirmacao("token-que-nao-existe"))
 
         self.assertTrue(any("token inexistente" in m for m in logs.output))
+
+    def test_token_e_armazenado_apenas_como_hash(self):
+        token_obj, token_cru = TokenRecuperacaoSenha.gerar(usuario=self.usuario)
+
+        self.assertNotEqual(token_obj.token, token_cru)
+        self.assertEqual(token_obj.token, hash_token(token_cru))
