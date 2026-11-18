@@ -350,6 +350,50 @@ A documentação do fluxo de atendimento atende ao art. 18 da LGPD e às diretri
 - **Arquivo:** `usuarios/templates/usuarios/politica_privacidade.html` (seção "7. Direitos do Titular")
 - **Arquivo:** `usuarios/templates/usuarios/termos_uso.html` (seção "6. Privacidade")
 
+## Tela "Atividade da conta" — visão resumida dos próprios eventos (LGPD arts. 6º e 9º)
+
+**Requisito:** O titular deve ter transparência sobre os eventos de segurança de sua própria conta, podendo detectar atividade suspeita, sem que dados desnecessários sejam expostos.
+
+### Decisão adotada
+
+A tela "Atividade da conta" (bloco dentro de `usuarios/templates/usuarios/dashboard.html`, acessível via `/usuarios/dashboard/`) exibe ao titular uma visão resumida dos próprios eventos de `LogAuditoria`, com as seguintes regras:
+
+1. **Somente eventos do próprio usuário** (`usuario = request.user`). Nunca eventos de outros usuários, nem eventos sem dono.
+2. **Os 10 eventos mais recentes**, do mais novo para o mais antigo. O limite 10 está na constante `LOG_ATIVIDADE_MAX_EVENTOS` em `config/settings.py` (junto de `LOGIN_MAX_TENTATIVAS`). Justificativa: o bloqueio ocorre com 5 falhas seguidas (senha ou 2FA); com 10 eventos cabe uma sequência completa de falhas, o bloqueio e ainda o login legítimo seguinte. Uma janela de tempo foi descartada: ficaria vazia em conta pouco usada e esconderia o ataque em conta muito usada. O histórico completo permanece no `LogAuditoria`, restrito a administradores.
+3. **Allowlist de tipos de evento.** Somente os tipos listados abaixo aparecem. Tipos fora da lista (incluindo tipos criados no futuro) nunca são exibidos:
+
+| tipo_evento | Texto exibido | Ícone |
+|---|---|---|
+| `2fa_verificacao_sucesso` | Login realizado | sucesso |
+| `login_falha` | Tentativa de login com falha | falha |
+| `login_bloqueado` | Login bloqueado temporariamente | falha |
+| `2fa_verificacao_falha` | Código 2FA inválido | falha |
+| `2fa_bloqueio` | Verificação 2FA bloqueada temporariamente | falha |
+| `2fa_ativacao` | 2FA ativado / Falha ao ativar o 2FA | sucesso / falha |
+| `recuperacao_senha_sucesso` | Senha redefinida por recuperação | sucesso |
+| `recuperacao_senha_solicitacao` | Recuperação de senha solicitada | sucesso |
+
+Fora da lista, de propósito: `login` (senha confere, antes do 2FA), `logout`, `2fa_sessao_expirada`, `2fa_desativacao`, `recuperacao_senha_falha`, `consentimento_lgpd`, `exportacao_dados`, `exclusao_dados`, `outro`.
+
+4. **Campos NÃO exibidos:** IP, `mensagem`, `detalhes` e `user_agent` não são enviados ao template. Passam-se só texto amigável, estado do ícone (sucesso/falha) e data/hora (formato dd/mm/aaaa HH:MM, fuso local).
+5. **Estado vazio:** se não houver eventos, exibe texto amigável ("Nenhuma atividade recente registrada.").
+6. **Remoção do mock:** o selo "exemplo" e os itens fixos foram removidos.
+
+### Justificativa técnica
+
+A tela atende ao **princípio da transparência** e ao direito de acesso do titular (art. 18, I da LGPD), permitindo que ele confirme a existência de tratamento de seus dados de autenticação. A exibição resumida atende ao **princípio da necessidade** (art. 6º, III da LGPD): apenas os dados estritamente relevantes para o titular são mostrados, sem IP, mensagem detalhada ou metadados. A finalidade é transparência ao titular e detecção de atividade suspeita, amparada pelos arts. 6º e 9º da LGPD.
+
+Isso amplia a decisão anterior de manter os Security Logs fora da consulta do titular: agora há uma visão resumida dos próprios eventos de segurança do titular, enquanto o histórico completo e detalhado continua restrito a administradores no Django Admin.
+
+### Evidências
+
+- **Código:** `usuarios/views_2fa.py` (view `dashboard`, allowlist `TIPOS_ATIVIDADE_CONTA`, mapeamento `MAPEAMENTO_ATIVIDADE`, consulta com `.only()` e `[:LOG_ATIVIDADE_MAX_EVENTOS]`)
+- **Código:** `config/settings.py` (constante `LOG_ATIVIDADE_MAX_EVENTOS = 10`)
+- **Template:** `usuarios/templates/usuarios/dashboard.html` (bloco `atividade-conta`, itens dinâmicos, estado vazio, sem selo "exemplo")
+- **CSS:** `static/auth/css/atividade_conta.css` (classes existentes mantidas)
+- **Testes:** `usuarios/test_atividade_conta.py` (6 testes: isolamento por usuário, allowlist, limite 10 e ordem, mapeamento 2fa_verificacao_sucesso, ausência de IP/mensagem/detalhes, estado vazio)
+- **Resultado:** 78 testes passando (`python manage.py test usuarios`)
+
 ## Histórico de alterações
 
 | Versão | Data | Alteração | Responsável |
@@ -358,3 +402,4 @@ A documentação do fluxo de atendimento atende ao art. 18 da LGPD e às diretri
 | 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados | Marcos Antônio Ferreira de Araújo |
 | 1.2 | 03/11/2026 | Atualização no fluxo de exclusão com solicitação e aprovação do admin | Marcos Antônio Ferreira de Araújo |
 | 1.3 | 04/11/2026 | Consentimento persistido no banco com validação de finalidade e versão no servidor, revogação que interrompe o tratamento e correções (nome do arquivo exportado e escopo da imutabilidade) | Matheus de Castro Viana |
+| 1.4 | 17/11/2026 | Tela "Atividade da conta": visão resumida dos próprios eventos de LogAuditoria ao titular, com allowlist, limite 10 e minimização de campos (sem IP/mensagem/detalhes) | Marcos Antônio Ferreira de Araújo |

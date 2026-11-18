@@ -8,10 +8,44 @@ from django.conf import settings
 from django.db import transaction
 from django.views.decorators.http import require_POST
 from datetime import timedelta
+from .models import LogAuditoria
 from .models_2fa import Configuracao2FA
 from .audit import registrar_evento_2fa, registrar_evento_autenticacao
 
 Usuario = get_user_model()
+
+# Tipos de evento exibidos na tela "Atividade da conta" do titular (allowlist).
+# Qualquer tipo fora desta lista não aparece, incluindo tipos criados no futuro.
+TIPOS_ATIVIDADE_CONTA = [
+    '2fa_verificacao_sucesso',
+    'login_falha',
+    'login_bloqueado',
+    '2fa_verificacao_falha',
+    '2fa_bloqueio',
+    '2fa_ativacao',
+    'recuperacao_senha_sucesso',
+    'recuperacao_senha_solicitacao',
+]
+
+# Mapeamento (tipo_evento, sucesso) -> (texto amigável, estado do ícone).
+# O estado do ícone define a classe CSS (sucesso ou falha).
+MAPEAMENTO_ATIVIDADE = {
+    ('2fa_verificacao_sucesso', True):  ('Login realizado', 'sucesso'),
+    ('login_falha', True):              ('Tentativa de login com falha', 'falha'),
+    ('login_falha', False):             ('Tentativa de login com falha', 'falha'),
+    ('login_bloqueado', True):          ('Login bloqueado temporariamente', 'falha'),
+    ('login_bloqueado', False):         ('Login bloqueado temporariamente', 'falha'),
+    ('2fa_verificacao_falha', True):    ('Código 2FA inválido', 'falha'),
+    ('2fa_verificacao_falha', False):   ('Código 2FA inválido', 'falha'),
+    ('2fa_bloqueio', True):             ('Verificação 2FA bloqueada temporariamente', 'falha'),
+    ('2fa_bloqueio', False):            ('Verificação 2FA bloqueada temporariamente', 'falha'),
+    ('2fa_ativacao', True):             ('2FA ativado', 'sucesso'),
+    ('2fa_ativacao', False):            ('Falha ao ativar o 2FA', 'falha'),
+    ('recuperacao_senha_sucesso', True): ('Senha redefinida por recuperação', 'sucesso'),
+    ('recuperacao_senha_sucesso', False):('Senha redefinida por recuperação', 'sucesso'),
+    ('recuperacao_senha_solicitacao', True): ('Recuperação de senha solicitada', 'sucesso'),
+    ('recuperacao_senha_solicitacao', False):('Recuperação de senha solicitada', 'sucesso'),
+}
 
 
 @login_required
@@ -19,7 +53,7 @@ def dashboard(request):
     """
     View do Dashboard do usuário autenticado.
     Exibe informações básicas do usuário e o status de segurança (2FA).
-    O decorator @login_required garante que apenas usuários autenticados 
+    O decorator @login_required garante que apenas usuários autenticados
     possam acessar esta tela (Requisito RF-04).
     """
     # Tenta obter a configuração de 2FA do usuário, se existir
@@ -29,9 +63,31 @@ def dashboard(request):
     except Configuracao2FA.DoesNotExist:
         tem_2fa = False
 
+    # Atividade da conta: eventos próprios do usuário, filtrados por allowlist,
+    # ordenados do mais novo para o mais antigo, limitados no banco.
+    eventos = (
+        LogAuditoria.objects
+        .filter(usuario=request.user, tipo_evento__in=TIPOS_ATIVIDADE_CONTA)
+        .order_by('-data_hora')
+        .only('tipo_evento', 'sucesso', 'data_hora')[:settings.LOG_ATIVIDADE_MAX_EVENTOS]
+    )
+
+    atividades = []
+    for evento in eventos:
+        texto, estado = MAPEAMENTO_ATIVIDADE.get(
+            (evento.tipo_evento, evento.sucesso),
+            ('Evento não disponível', 'falha'),
+        )
+        atividades.append({
+            'texto': texto,
+            'icone': 'atividade-conta__icone--sucesso' if estado == 'sucesso' else 'atividade-conta__icone--falha',
+            'data_hora': evento.data_hora,
+        })
+
     context = {
         'usuario': request.user,
         'tem_2fa': tem_2fa,
+        'atividades': atividades,
     }
     return render(request, 'usuarios/dashboard.html', context)
 

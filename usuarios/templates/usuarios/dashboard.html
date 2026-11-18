@@ -6,6 +6,10 @@
     {% trans "Painel do Usuário" %}
 {% endblock head_title %}
 
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'auth/css/atividade_conta.css' %}">
+{% endblock extra_head %}
+
 {% block content %}
 <div class="auth-shell">
     <div class="auth-card" style="max-width: 500px;">
@@ -53,8 +57,30 @@
             </div>
         </div>
 
-        <div style="margin: 24px 0; padding: 16px; background: var(--auth-bg); border-radius: 12px; border: 1px solid var(--auth-border);">
-            <span style="font-weight: 600; color: var(--auth-ink);">{% trans "Atividade da conta" %}</span>
+        <div class="atividade-conta">
+            <details class="atividade-conta__detalhes">
+                <summary class="atividade-conta__resumo">
+                    <span class="atividade-conta__titulo">{% trans "Atividade da conta" %}</span>
+                </summary>
+
+                <ul class="atividade-conta__lista">
+                    {% if atividades %}
+                        {% for atividade in atividades %}
+                            <li class="atividade-conta__item">
+                                <span class="atividade-conta__icone {{ atividade.icone }}" aria-hidden="true">
+                                    {% if atividade.icone == 'atividade-conta__icone--sucesso' %}✓{% else %}✕{% endif %}
+                                </span>
+                                <span class="atividade-conta__texto">{% trans atividade.texto %}</span>
+                                <span class="atividade-conta__data">{{ atividade.data_hora|date:"d/m/Y H:i" }}</span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="atividade-conta__vazio">
+                            {% trans "Nenhuma atividade recente registrada." %}
+                        </li>
+                    {% endif %}
+                </ul>
+            </details>
         </div>
 
         <div class="auth-form__actions" style="margin-top: 32px; border-top: 1px solid var(--auth-border); padding-top: 24px;">

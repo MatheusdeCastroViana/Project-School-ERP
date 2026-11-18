@@ -9,7 +9,7 @@ Sistema web para gestão integrada de escolas profissionalizantes e de formaçã
 
 ## 🌐 Acessar o sistema
 
-Acesse a versão online: [Project School ERP](https://project-school-erp.onrender.com)
+Acesse a versão online: [Project School ERP](https://project-school-erp-ujgd.onrender.com)
 
 ## Status do Projeto
 

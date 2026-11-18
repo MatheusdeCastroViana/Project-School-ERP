@@ -204,6 +204,10 @@ O painel administrativo foi estruturado para funcionar como uma ferramenta de an
 - **Filtro por Sucesso:** Isola tentativas mal-sucedidas.
 - **Filtro por IP:** Campo de pesquisa para rastrear acessos de origens suspeitas.
 
+## Consulta do titular: tela "Atividade da conta"
+
+O titular pode consultar uma visão resumida dos próprios eventos de segurança na tela "Atividade da conta" (dentro do dashboard, `/usuarios/dashboard/`). A consulta é restrita aos eventos do próprio usuário (`usuario = request.user`), mostra no máximo os 10 eventos mais recentes (constante `LOG_ATIVIDADE_MAX_EVENTOS = 10` em `config/settings.py`) e usa uma allowlist de tipos de evento. Campos sensíveis (IP, mensagem, detalhes, user_agent) não são exibidos ao titular, respeitando o princípio da minimização (art. 6º, III da LGPD). O histórico completo e detalhado continua restrito a administradores no Django Admin.
+
 ## Histórico de alterações
 
 | Versão | Data | Alteração | Responsável |
@@ -211,3 +215,4 @@ O painel administrativo foi estruturado para funcionar como uma ferramenta de an
 | 1.0 | 20/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
 | 1.1 | 03/11/2026 | Proteção por trigger no banco de dados | Marcos Antônio Ferreira de Araújo |
 | 1.2 | 04/11/2026 | Logs de consentimento LGPD (aceite, recusa e revogação no mesmo tipo de evento) | Matheus de Castro Viana |
+| 1.3 | 17/11/2026 | Consulta do titular: tela "Atividade da conta" com visão resumida dos próprios eventos de LogAuditoria (allowlist, limite 10, minimização de campos) | Marcos Antônio Ferreira de Araújo |
