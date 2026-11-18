@@ -401,5 +401,5 @@ Isso amplia a decisão anterior de manter os Security Logs fora da consulta do t
 | 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados | Marcos Antônio Ferreira de Araújo |
 | 1.2 | 03/11/2026 | Atualização no fluxo de exclusão com solicitação e aprovação do admin | Marcos Antônio Ferreira de Araújo |
-| 1.3 | 04/11/2026 | Consentimento persistido no banco com validação de finalidade e versão no servidor, revogação que interrompe o tratamento e correções (nome do arquivo exportado e escopo da imutabilidade) | Marcos Antônio Ferreira de Araújo |
+| 1.3 | 04/11/2026 | Consentimento persistido no banco com validação de finalidade e versão no servidor, revogação que interrompe o tratamento e correções (nome do arquivo exportado e escopo da imutabilidade) | Matheus de Castro Viana |
 | 1.4 | 17/11/2026 | Tela "Atividade da conta": visão resumida dos próprios eventos de LogAuditoria ao titular, com allowlist, limite 10 e minimização de campos (sem IP/mensagem/detalhes) | Marcos Antônio Ferreira de Araújo |
