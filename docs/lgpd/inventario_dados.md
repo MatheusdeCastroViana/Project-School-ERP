@@ -23,7 +23,7 @@ Os dados e as finalidades foram definidos segundo o princípio da minimização,
 | Credencial | chave secreta TOTP, status do 2FA, último uso, tentativas de código inválidas | Funcionário (usuário) | Autenticação em dois fatores | Sistema; o status é visível ao próprio funcionário | Chave cifrada em repouso |
 | Controle de acesso | tentativas de login falhas, bloqueado até | Funcionário (usuário) | Proteção contra força bruta | Administradores do sistema | Acesso controlado |
 | Recuperação de senha | hash do token, datas de criação, expiração e uso, IP e user-agent da solicitação | Funcionário (usuário) | Recuperação de senha e rastreabilidade | Administradores do sistema | Token armazenado somente como hash SHA-256 |
-| Log de auditoria | tipo de evento, data e hora, resultado, IP, mensagem e detalhes do evento | Funcionário (usuário) | Auditoria, segurança e rastreabilidade | Administradores do sistema | Registros imutáveis |
+| Log de auditoria | tipo de evento, data e hora, resultado, IP, mensagem e detalhes do evento | Funcionário (usuário) | Auditoria, segurança e rastreabilidade | Administradores do sistema (acesso completo); próprio titular (visão resumida dos próprios eventos na tela "Atividade da conta") | Registros imutáveis |
 | Log de auditoria | e-mail digitado em tentativas de login ou recuperação de senha com e-mail inexistente | Quem digitou o e-mail | Detecção de tentativas de acesso suspeitas | Administradores do sistema | Registros imutáveis |
 | Consentimento | tipo, versão, decisão, data e hora, IP | Funcionário (usuário) | Comprovação do consentimento | Administradores do sistema; no navegador, o próprio titular | Registros imutáveis |
 
@@ -96,3 +96,4 @@ Toda solicitação de exclusão é registrada na auditoria (`usuarios/audit.py`,
 | 1.0 | 12/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo |
 | 1.1 | 12/09/2026 | Documentadas as funcionalidades de consulta, exportação e exclusão de dados (RF 4.8, 4.9, 4.10) | Marcos Antônio Ferreira de Araújo |
 | 1.2 | 03/11/2026 | Fluxo de exclusão com solicitação e aprovação da Gestão (RF 4.10): modelo SolicitacaoExclusao, admin com ações Aprovar/Recusar, execução em transaction.atomic() | Marcos Antônio Ferreira de Araújo |
+| 1.3 | 17/11/2026 | Tela "Atividade da conta": titular consulta visão resumida dos próprios eventos de LogAuditoria (10 mais recentes, allowlist, sem IP/mensagem/detalhes) | Marcos Antônio Ferreira de Araújo |

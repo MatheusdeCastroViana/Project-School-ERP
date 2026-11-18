@@ -98,6 +98,9 @@ LOGIN_BLOQUEIO_MINUTOS = 15
 TWOFA_MAX_TENTATIVAS = 5
 TWOFA_PENDENTE_MINUTOS = 5
 
+# Tela "Atividade da conta": número máximo de eventos exibidos ao titular
+LOG_ATIVIDADE_MAX_EVENTOS = 10
+
 AUTHENTICATION_BACKENDS = [
     'usuarios.backends.UsuarioBackend', 
 ]
