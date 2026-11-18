@@ -214,5 +214,5 @@ O titular pode consultar uma visão resumida dos próprios eventos de segurança
 |---|---|---|---|
 | 1.0 | 20/09/2026 | Primeira versão do documento | Marcos Antônio Ferreira de Araújo e Matheus de Castro Viana |
 | 1.1 | 03/11/2026 | Proteção por trigger no banco de dados | Marcos Antônio Ferreira de Araújo |
-| 1.2 | 04/11/2026 | Logs de consentimento LGPD (aceite, recusa e revogação no mesmo tipo de evento) | Marcos Antônio Ferreira de Araújo |
+| 1.2 | 04/11/2026 | Logs de consentimento LGPD (aceite, recusa e revogação no mesmo tipo de evento) | Matheus de Castro Viana |
 | 1.3 | 17/11/2026 | Consulta do titular: tela "Atividade da conta" com visão resumida dos próprios eventos de LogAuditoria (allowlist, limite 10, minimização de campos) | Marcos Antônio Ferreira de Araújo |
